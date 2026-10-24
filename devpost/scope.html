@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Organizer — Scope</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --paper: #fffcf6;
+      --ink: #1c1914;
+      --muted: #5c564c;
+      --line: #ddd4c4;
+      --now: #2f6f4e;
+      --later: #8a5a12;
+      --cut: #8a3b32;
+      --card: #ffffff;
+      --accent: #3d5a80;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #e7efe7, transparent),
+                  radial-gradient(900px 500px at 100% 0%, #efe6d6, var(--bg));
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    .eyebrow {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin: 0 0 0.4rem;
+    }
+    h1 { font-size: 2.1rem; margin: 0 0 0.4rem; letter-spacing: -0.03em; }
+    .lede { font-size: 1.15rem; color: var(--muted); margin: 0 0 2rem; max-width: 42rem; }
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 10px 30px rgba(28, 25, 20, 0.04);
+    }
+    h2 { margin: 0 0 0.6rem; font-size: 1.05rem; }
+    p, li { color: var(--ink); }
+    .kernel {
+      border-left: 4px solid var(--now);
+    }
+    .diagram {
+      background: var(--card);
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .diagram svg { display: block; width: 100%; height: auto; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .fallback {
+      margin: 0.75rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.85rem;
+    }
+    .tabs button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      font: inherit;
+      color: var(--ink);
+    }
+    .tabs button[aria-selected="true"] {
+      color: #fff;
+    }
+    .tabs button[data-panel="now"][aria-selected="true"] { background: var(--now); border-color: var(--now); }
+    .tabs button[data-panel="later"][aria-selected="true"] { background: var(--later); border-color: var(--later); }
+    .tabs button[data-panel="cut"][aria-selected="true"] { background: var(--cut); border-color: var(--cut); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    ul { margin: 0.4rem 0 0; padding-left: 1.15rem; }
+    .note { font-size: 0.9rem; color: var(--muted); margin-top: 0.75rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Scope · proof of concept · draft</p>
+    <h1>File Organizer</h1>
+    <p class="lede">A personal tool that suggests where files should live (including use-case folders), applies only what you accept, and helps you find files without walking every folder.</p>
+
+    <section class="kernel">
+      <h2>The unique kernel</h2>
+      <p>It does not blindly dump files into Documents / Music / Pictures. It proposes groupings that match a use case (for example, one “English communication research” folder) and where that folder should live, then moves files only after you choose.</p>
+    </section>
+
+    <section>
+      <h2>Who, loop, proof</h2>
+      <div class="diagram">
+        <p class="sr-only">Paul, who currently hunts through a messy Downloads folder, opens File Organizer. He sees folder cards plus a Windows extras card, searches or hits Organize, reviews use-case suggestions, and accepts moves. The proof is a short demo where accepted files actually move, search finds a file, Windows extras sit on their own card, and delete is only asked, never forced.</p>
+        <svg viewBox="0 0 760 220" role="img" aria-hidden="true">
+          <rect x="16" y="58" width="170" height="104" rx="16" fill="#3d5a80"/>
+          <text x="101" y="98" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, sans-serif">Paul</text>
+          <text x="101" y="122" text-anchor="middle" fill="#d7e2ee" font-size="12" font-family="Segoe UI, sans-serif">messy Downloads</text>
+          <text x="101" y="140" text-anchor="middle" fill="#d7e2ee" font-size="12" font-family="Segoe UI, sans-serif">sorts by hand today</text>
+          <polygon points="196,110 228,110 228,100 256,116 228,132 228,122 196,122" fill="#1c1914"/>
+          <rect x="268" y="36" width="220" height="148" rx="16" fill="#2f6f4e"/>
+          <text x="378" y="78" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, sans-serif">Core loop</text>
+          <text x="378" y="104" text-anchor="middle" fill="#e4f3ea" font-size="12" font-family="Segoe UI, sans-serif">cards + extras card · search</text>
+          <text x="378" y="124" text-anchor="middle" fill="#e4f3ea" font-size="12" font-family="Segoe UI, sans-serif">suggest use-case folders</text>
+          <text x="378" y="144" text-anchor="middle" fill="#e4f3ea" font-size="12" font-family="Segoe UI, sans-serif">accept → files move</text>
+          <polygon points="498,110 530,110 530,100 558,116 530,132 530,122 498,122" fill="#1c1914"/>
+          <rect x="570" y="58" width="174" height="104" rx="16" fill="#8a5a12"/>
+          <text x="657" y="98" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, sans-serif">Proof</text>
+          <text x="657" y="122" text-anchor="middle" fill="#f4e6cc" font-size="12" font-family="Segoe UI, sans-serif">1-minute demo:</text>
+          <text x="657" y="140" text-anchor="middle" fill="#f4e6cc" font-size="12" font-family="Segoe UI, sans-serif">suggest, accept, moved</text>
+        </svg>
+        <p class="fallback">Paul (messy Downloads, sorts by hand) → core loop (folder cards plus Windows extras card, search, Organize, use-case suggestions, accept, files move) → proof (short demo of suggest / accept / moved).</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Who it’s for</h2>
+      <p>People with disorganized files: students, older people / older generations, and anyone in the same situation — years of stuff piled in Downloads, hunting through folders by hand. The proof of concept is still built around Paul’s machine (third-year software engineering student, Windows + WSL, school/research/media dump), so we can demo a real mess without designing for every kind of user at once.</p>
+    </section>
+
+    <section>
+      <h2>Why this matters</h2>
+      <p>He already knows DSA and OOP but gets stuck actually building. This is a real mess on his own machine: high-school-era files, research, and a Downloads folder that never got sorted. He wants files organized properly and easier to locate.</p>
+    </section>
+
+    <section>
+      <h2>What “working” looks like</h2>
+      <p>In a short demo: open the app, look at folder cards including a Windows extras card, search and find a file, press Organize, see use-case-aware suggestions (not just file-type buckets), accept some, and those files actually move. Also get asked before deleting unused or junk-looking files.</p>
+    </section>
+
+    <section>
+      <h2>Boundary</h2>
+      <div class="tabs" role="tablist" aria-label="Scope boundary">
+        <button type="button" role="tab" id="tab-now" data-panel="now" aria-selected="true" aria-controls="panel-now">Now</button>
+        <button type="button" role="tab" id="tab-later" data-panel="later" aria-selected="false" aria-controls="panel-later">Later</button>
+        <button type="button" role="tab" id="tab-cut" data-panel="cut" aria-selected="false" aria-controls="panel-cut">Cut</button>
+      </div>
+      <div id="panel-now" class="panel active" role="tabpanel" aria-labelledby="tab-now">
+        <ul>
+          <li>Organize that suggests placements and use-case folders, then does the accepted ones</li>
+          <li>Ask before deleting unused or somewhat useless files</li>
+          <li>Separate Windows extra files from “my” files, shown as their own Windows extras card (not mixed into Documents / Downloads)</li>
+          <li>A search button to find a file without walking folders (within the files this version can see)</li>
+        </ul>
+        <p class="note">The first demo can target a messy area Paul actually cares about (especially Downloads), not a perfect whole-disk product.</p>
+      </div>
+      <div id="panel-later" class="panel" role="tabpanel" aria-labelledby="tab-later" hidden>
+        <ul>
+          <li>Reach Windows files and WSL Ubuntu files as one place: search or copy between them without hopping through folders</li>
+          <li>Richer “authoritative files” library and more folder cards / tabs</li>
+          <li>Smarter junk detection and more use-case templates</li>
+        </ul>
+      </div>
+      <div id="panel-cut" class="panel" role="tabpanel" aria-labelledby="tab-cut" hidden>
+        <ul>
+          <li><strong>Blind auto-sort by file type with no approval</strong> — the kernel is suggest-then-accept</li>
+          <li><strong>Full Windows ↔ WSL bridge in this proof of concept</strong> — wanted, later, not now (search here is not that bridge)</li>
+          <li><strong>A complete file manager</strong> — too big for 2–4 hours</li>
+          <li><strong>A Teleparty-style watch-party extension</strong> — inspiration only</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <script>
+    const buttons = document.querySelectorAll('[role="tab"]');
+    const panels = {
+      now: document.getElementById("panel-now"),
+      later: document.getElementById("panel-later"),
+      cut: document.getElementById("panel-cut")
+    };
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const id = button.getAttribute("data-panel");
+        buttons.forEach((other) => other.setAttribute("aria-selected", String(other === button)));
+        Object.entries(panels).forEach(([key, panel]) => {
+          const on = key === id;
+          panel.classList.toggle("active", on);
+          panel.hidden = !on;
+        });
+      });
+    });
+  </script>
+</body>
+</html>
