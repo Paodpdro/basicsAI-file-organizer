@@ -50,6 +50,8 @@ Use the current supported Node.js LTS and compatible stable Electron/PDF.js rele
 - Use a soft yellow page background and rounded cream folder cards. Add large faded gray paper/folder SVGs and smaller gray document, star, image, music, and video SVGs behind content; keep the decoration `aria-hidden`, non-interactive, and low-opacity. The medium-blue header uses white heading/eyebrow text and a deeper-blue underline; white text must meet WCAG AA normal-text contrast. The Rescan button uses sunny yellow, readable medium-blue text, and a darker-yellow bottom edge with clear hover and focus states. Use Fredoka for headings/buttons and Nunito for body text, with `system-ui, sans-serif` fallbacks. Reserve red for deletion actions and warnings.
 - Keep copy short, descriptive, kind, and non-blaming. Use simple transitions only; no complex animation.
 - Make source and destination paths visually distinct and readable. Ensure the app remains usable with keyboard focus and visible focus indicators.
+- Keep move-card location information compact: show a short source-to-destination summary first, with the full source and destination paths available in a disclosure.
+- Keep a visible, non-modal status message while scans or file actions are processing, followed by a clear completion or error message.
 - Implement with plain CSS; the palette and Duolingo-like friendliness do not require a component framework.
 
 ## Components

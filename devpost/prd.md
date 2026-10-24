@@ -93,6 +93,8 @@ Source: `scope.md > The POC Boundary`.
 - **Move suggestion skipped:** Skip only that file when Paul clicks Skip for now. It remains in place and may appear again after a later scan.
 - **Deletion candidate:** Show multiple cards per page, but no file is deleted until Paul confirms Delete on that candidate.
 - **Scan boundary:** The first version scans the six standard personal folders and their subfolders. Windows, Program Files, and other system/application folders are excluded; custom scan locations are deferred.
+- **Processing feedback:** Show a visible “Still processing” status while scanning or carrying out a file action, then clearly report its completion or error.
+- **Move locations:** Lead with a compact source-to-destination summary on each move card and let Paul expand the full paths when needed.
 
 ## Product Decisions
 - Keep Documents, Downloads, Desktop, Pictures, Music, and Videos as familiar general-folder cards; organize files into these or purpose-based folders rather than removing the standard folders.

@@ -63,8 +63,8 @@
           <nav class="page-navigation" aria-label="Main navigation">
             <button class="button button-secondary" id="purpose-folders-button" type="button" hidden>Purpose folders</button>
             <button class="button button-secondary" id="general-folders-button" type="button">General folders</button>
-            <button class="button button-secondary" id="suggestions-button" type="button">Review move suggestions</button>
-            <button class="button button-secondary" id="deletion-review-button" type="button">Review deletion candidates (0)</button>
+            <button class="button button-secondary" id="suggestions-button" type="button">Organize Files</button>
+            <button class="button button-secondary" id="deletion-review-button" type="button">Delete Files</button>
             <button class="button button-secondary" id="add-purpose-folder-button" type="button">Add existing folder</button>
           </nav>
           <button class="button button-primary" id="rescan-button" type="button">Rescan folders</button>
@@ -72,7 +72,7 @@
       </header>
 
       <main>
-        <p class="move-notice" id="app-notice" role="status" hidden></p>
+        <p class="move-notice app-status" id="app-notice" role="status" aria-live="polite" hidden></p>
         <section class="browser-toolbar" id="browser-toolbar" aria-label="Search and display">
           <label for="file-search-input">Search files and folders</label>
           <input id="file-search-input" type="search" placeholder="Search names or folder paths">

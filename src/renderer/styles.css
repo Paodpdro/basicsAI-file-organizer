@@ -177,6 +177,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .file-grid-view .file-actions { margin-top: .2rem; }
 .empty-message { padding: 1rem 0; color: var(--muted); }
 .move-notice { margin: 1rem 0; padding: .8rem 1rem; border-radius: 14px; background: var(--blue-light); color: var(--blue-dark); overflow-wrap: anywhere; }
+.app-status { border-left: 5px solid var(--blue); font-weight: 800; }
+.app-status-processing { background: #edf5fb; }
+.app-status-error { border-left-color: #a93226; background: #fff0ed; color: #842b22; }
 .review-disclosure { margin: 1rem 0; border: 1px solid #eadcae; border-radius: 16px; background: #fff9e6; }
 .review-disclosure summary { padding: .8rem 1rem; color: var(--blue-dark); font-weight: 800; cursor: pointer; }
 .skipped-files-list { display: grid; gap: .6rem; margin: 0; padding: 0 1rem 1rem 2.5rem; }
@@ -203,6 +206,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .suggestion-paths { display: grid; gap: .55rem; margin: 0; }
 .suggestion-paths p { display: grid; gap: .2rem; margin: 0; }
 .suggestion-paths code { overflow-wrap: anywhere; color: var(--blue-dark); }
+.suggestion-location-summary { display: block !important; color: var(--blue-dark); font-weight: 850; overflow-wrap: anywhere; }
+.suggestion-full-paths { border-top: 1px solid var(--line); padding-top: .5rem; }
+.suggestion-full-paths summary { color: var(--muted); font-size: .86rem; font-weight: 750; cursor: pointer; }
+.suggestion-full-paths[open] { display: grid; gap: .55rem; }
 .suggestion-actions { justify-content: space-between; }
 .preview-button { justify-self: start; }
 .preview-panel { display: grid; gap: .5rem; margin-top: .9rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
@@ -277,8 +284,8 @@ footer p { margin: 0; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.decoration-large { opacity: .14; }
-.decoration-small { opacity: .2; }
+.decoration-large { opacity: .18; }
+.decoration-small { opacity: .24; }
 .decoration-paper-one { top: 15%; left: -3rem; width: 18rem; color: var(--decoration-gray); transform: rotate(-12deg); }
 .decoration-folder-one { top: 33%; right: -3rem; width: 21rem; color: var(--decoration-gray); transform: rotate(8deg); }
 .decoration-paper-two { top: 69%; left: 2%; width: 15rem; color: var(--decoration-gray); transform: rotate(-6deg); }
@@ -298,5 +305,6 @@ footer p { margin: 0; }
   .file-location { grid-column: auto; }
   .suggestion-grid { grid-template-columns: 1fr; }
   .deletion-card-grid { grid-template-columns: 1fr; }
-  .decoration-large { opacity: .1; }
+  .decoration-large { opacity: .13; }
+  .decoration-small { opacity: .2; }
 }

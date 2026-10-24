@@ -91,6 +91,14 @@ function setStatus(message) {
   scanStatus.textContent = message;
 }
 
+function setAppStatus(message, { processing = false, error = false } = {}) {
+  appNotice.textContent = message;
+  appNotice.hidden = !message;
+  appNotice.setAttribute("aria-busy", String(processing));
+  appNotice.classList.toggle("app-status-processing", processing);
+  appNotice.classList.toggle("app-status-error", error);
+}
+
 function renderPagination(length, pageSize, page, controls) {
   const pageCount = Math.max(1, Math.ceil(length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
@@ -543,6 +551,10 @@ function renderMoveSuggestion(suggestion, index) {
 
   const paths = document.createElement("div");
   paths.className = "suggestion-paths";
+  const locationSummary = makeTextElement("p", "suggestion-location-summary", "");
+  const fullPaths = document.createElement("details");
+  fullPaths.className = "suggestion-full-paths";
+  const fullPathsSummary = makeTextElement("summary", "", "Show full paths");
   const sourcePath = document.createElement("p");
   sourcePath.append(makeTextElement("strong", "", "Current location"));
   sourcePath.append(makeTextElement("code", "", suggestion.sourcePath));
@@ -550,7 +562,8 @@ function renderMoveSuggestion(suggestion, index) {
   destinationLabel.append(makeTextElement("strong", "", "Proposed destination"));
   const destinationPath = makeTextElement("code", "", suggestion.destinationPath);
   destinationLabel.append(destinationPath);
-  paths.append(sourcePath, destinationLabel);
+  fullPaths.append(fullPathsSummary, sourcePath, destinationLabel);
+  paths.append(locationSummary, fullPaths);
   card.append(paths);
 
   const destinationControls = document.createElement("div");
@@ -604,11 +617,20 @@ function renderMoveSuggestion(suggestion, index) {
       .filter(Boolean)
       .join(separator);
   }
+  function updateLocationSummary() {
+    const root = folders.find((item) => item.id === destinationRoot.value);
+    const destinationName = destinationFolderName.value.trim();
+    locationSummary.textContent = `${suggestion.sourceRootLabel} → ${root?.label ?? "Folder"}${
+      destinationName ? ` / ${destinationName}` : ""
+    }`;
+  }
   function updateDestinationLabel() {
     reviewedDestinationPath = "";
     approveButton.disabled = true;
     destinationPath.textContent = destinationForCard();
+    updateLocationSummary();
   }
+  updateLocationSummary();
 
   const approveButton = document.createElement("button");
   approveButton.type = "button";
@@ -627,6 +649,9 @@ function renderMoveSuggestion(suggestion, index) {
   card.append(operationError, actions);
 
   async function loadPreview() {
+    setAppStatus(`Still processing — preparing a preview of ${suggestion.fileName}…`, {
+      processing: true
+    });
     previewPanel.hidden = false;
     reviewedDestinationPath = "";
     approveButton.disabled = true;
@@ -645,6 +670,7 @@ function renderMoveSuggestion(suggestion, index) {
       reviewedDestinationPath = preview.destinationPath;
       renderPreview(preview, previewPanel);
       approveButton.disabled = false;
+      setAppStatus(`Preview ready for ${suggestion.fileName}.`);
     } catch (error) {
       if (requestId !== previewRequest) return;
       previewPanel.replaceChildren(
@@ -655,6 +681,7 @@ function renderMoveSuggestion(suggestion, index) {
         makeTextElement("p", "preview-error", `Preview error: ${error.message}`)
       );
       approveButton.disabled = true;
+      setAppStatus(`Could not preview ${suggestion.fileName}: ${error.message}`, { error: true });
     }
   }
 
@@ -663,6 +690,7 @@ function renderMoveSuggestion(suggestion, index) {
     reviewedDestinationPath = "";
     approveButton.disabled = true;
     destinationPath.textContent = destinationForCard();
+    updateLocationSummary();
   });
   destinationControls.addEventListener("change", () => {
     updateDestinationLabel();
@@ -670,21 +698,27 @@ function renderMoveSuggestion(suggestion, index) {
   });
   skipButton.addEventListener("click", async () => {
     skipButton.disabled = true;
+    setAppStatus(`Still processing — updating the move review for ${suggestion.fileName}…`, {
+      processing: true
+    });
     try {
       await window.organizer.skipMoveSuggestion(suggestion.id);
       moveSuggestions = moveSuggestions.filter((item) => item.id !== suggestion.id);
       moveNotice = `Skipped ${suggestion.fileName} for now. No files were moved.`;
       renderSuggestion();
+      setAppStatus(`Done — skipped ${suggestion.fileName} for now.`);
     } catch (error) {
       skipButton.disabled = false;
       operationError.textContent = `We could not skip this suggestion: ${error.message}`;
       operationError.hidden = false;
+      setAppStatus(`Could not skip ${suggestion.fileName}: ${error.message}`, { error: true });
     }
   });
   approveButton.addEventListener("click", async () => {
     if (!reviewedDestinationPath) return;
     approveButton.disabled = true;
     operationError.hidden = true;
+    setAppStatus(`Still processing — moving ${suggestion.fileName}…`, { processing: true });
     try {
       const result = await window.organizer.approveMoveSuggestion(
         suggestion.id,
@@ -700,15 +734,18 @@ function renderMoveSuggestion(suggestion, index) {
         await loadPreview();
         suggestionNotice.textContent = moveNotice;
         suggestionNotice.hidden = false;
+        setAppStatus(`Destination changed for ${suggestion.fileName}. Review the updated preview.`);
         return;
       }
       moveNotice = `Moved ${result.fileName} to ${result.destinationPath}`;
       await scanFolders({ resetSelection: false });
       showSuggestionPage(true);
+      setAppStatus(`Done — moved ${result.fileName}.`);
     } catch (error) {
       approveButton.disabled = false;
       operationError.textContent = `We could not move this file: ${error.message}`;
       operationError.hidden = false;
+      setAppStatus(`Could not move ${suggestion.fileName}: ${error.message}`, { error: true });
     }
   });
 
@@ -734,7 +771,7 @@ function renderSuggestion() {
     : "All caught up";
   suggestionEmpty.hidden = suggestionCount > 0;
   suggestionEmpty.textContent = "No move suggestions right now. Your files remain where they are.";
-  suggestionsButton.textContent = `Review move suggestions (${suggestionCount})`;
+  suggestionsButton.textContent = "Organize Files";
   skippedFilesSummary.textContent = `Skipped files (${skippedFiles.length})`;
   skippedFilesDisclosure.hidden = skippedFiles.length === 0;
   appendReviewItems(skippedFilesList, skippedFiles, "skipped-reason");
@@ -808,6 +845,9 @@ function renderDeletionCandidate(candidate) {
     }
     previewPanel.hidden = false;
     previewButton.textContent = "Hide preview";
+    setAppStatus(`Still processing — preparing a preview of ${candidate.fileName}…`, {
+      processing: true
+    });
     previewPanel.replaceChildren(makeTextElement("p", "preview-unavailable", "Preparing preview…"));
     const request = ++previewRequest;
     const entry = {
@@ -822,6 +862,7 @@ function renderDeletionCandidate(candidate) {
       const preview = await window.organizer.previewFile(entry.rootId, entry.relativePath);
       if (request !== previewRequest || previewPanel.hidden) return;
       renderBrowsePreview(preview, entry, previewPanel, { showOpen: false });
+      setAppStatus(`Preview ready for ${candidate.fileName}.`);
     } catch (error) {
       if (request !== previewRequest || previewPanel.hidden) return;
       previewPanel.replaceChildren(
@@ -834,6 +875,7 @@ function renderDeletionCandidate(candidate) {
         makeTextElement("code", "preview-destination", candidate.filePath),
         makeTextElement("p", "preview-error", `Preview error: ${error.message}`)
       );
+      setAppStatus(`Could not preview ${candidate.fileName}: ${error.message}`, { error: true });
     }
   });
   card.append(previewButton, previewPanel);
@@ -848,6 +890,9 @@ function renderDeletionCandidate(candidate) {
     keepButton.disabled = true;
     deleteButton.disabled = true;
     deletionNotice.hidden = true;
+    setAppStatus(`Still processing — keeping ${candidate.fileName} in place…`, {
+      processing: true
+    });
     try {
       const result = await window.organizer.keepDeletionCandidate(candidate.id);
       deletionCandidates = deletionCandidates.filter((item) => item.id !== candidate.id);
@@ -855,11 +900,13 @@ function renderDeletionCandidate(candidate) {
       deletionNotice.textContent = `Kept ${result.fileName}. It remains where it is.`;
       deletionNotice.hidden = false;
       renderDeletionReview();
+      setAppStatus(`Done — ${result.fileName} stays where it is.`);
     } catch (error) {
       keepButton.disabled = false;
       deleteButton.disabled = false;
       deletionNotice.textContent = `We could not keep this review item: ${error.message}`;
       deletionNotice.hidden = false;
+      setAppStatus(`Could not update the review for ${candidate.fileName}: ${error.message}`, { error: true });
     }
   });
   deleteButton.addEventListener("click", async () => {
@@ -870,6 +917,9 @@ function renderDeletionCandidate(candidate) {
     keepButton.disabled = true;
     deleteButton.disabled = true;
     deletionNotice.hidden = true;
+    setAppStatus(`Still processing — sending ${candidate.fileName} to the Recycle Bin…`, {
+      processing: true
+    });
     try {
       const result = await window.organizer.deleteCandidate(candidate.id);
       deletionCandidates = deletionCandidates.filter((item) => item.id !== candidate.id);
@@ -877,11 +927,13 @@ function renderDeletionCandidate(candidate) {
       deletionNotice.textContent = `Sent ${result.fileName} to the Recycle Bin.`;
       deletionNotice.hidden = false;
       renderDeletionReview();
+      setAppStatus(`Done — ${result.fileName} was sent to the Recycle Bin.`);
     } catch (error) {
       keepButton.disabled = false;
       deleteButton.disabled = false;
       deletionNotice.textContent = `We could not send this file to the Recycle Bin: ${error.message}`;
       deletionNotice.hidden = false;
+      setAppStatus(`Could not send ${candidate.fileName} to the Recycle Bin: ${error.message}`, { error: true });
     }
   });
   actions.append(keepButton, deleteButton);
@@ -891,7 +943,7 @@ function renderDeletionCandidate(candidate) {
 
 function renderDeletionReview() {
   const count = deletionCandidates.length;
-  deletionReviewButton.textContent = `Review deletion candidates (${count})`;
+  deletionReviewButton.textContent = "Delete Files";
   deletionProgress.textContent = count
     ? `${count} ${count === 1 ? "candidate" : "candidates"} to review`
     : "All caught up";
@@ -963,7 +1015,7 @@ function navigateBack() {
 async function scanFolders({ resetSelection = true } = {}) {
   clearTimeout(searchTimer);
   searchRequest += 1;
-  appNotice.hidden = true;
+  setAppStatus("Still processing — scanning your folders…", { processing: true });
   deletionNotice.textContent = "";
   deletionNotice.hidden = true;
   if (resetSelection) {
@@ -1012,6 +1064,11 @@ async function scanFolders({ resetSelection = true } = {}) {
     setStatus(issueCount
       ? `${issueCount} locations need attention`
       : `${moveSuggestions.length} move suggestions · ${deletionCandidates.length} deletion candidates`);
+    setAppStatus(
+      issueCount
+        ? `Scan complete — ${issueCount} locations need attention.`
+        : `Scan complete — ${moveSuggestions.length} moves and ${deletionCandidates.length} deletion candidates ready.`
+    );
     if (issueCount) {
       showMessage("Some folders need attention. Their details and paths are listed above.");
     } else {
@@ -1021,8 +1078,7 @@ async function scanFolders({ resetSelection = true } = {}) {
   } catch (error) {
     setStatus("Scan could not finish");
     showMessage(`We could not scan your folders: ${error.message}`);
-    appNotice.textContent = `We could not scan your folders: ${error.message}`;
-    appNotice.hidden = false;
+    setAppStatus(`We could not scan your folders: ${error.message}`, { error: true });
     moveSuggestions = [];
     deletionCandidates = [];
     deletionReviewIssues = [];
@@ -1043,7 +1099,6 @@ async function scanFolders({ resetSelection = true } = {}) {
 
 async function addExistingPurposeFolder() {
   addPurposeFolderButton.disabled = true;
-  appNotice.hidden = true;
   try {
     const result = await window.organizer.addExistingPurposeFolder();
     if (result.cancelled) return;
@@ -1051,11 +1106,9 @@ async function addExistingPurposeFolder() {
       throw new Error("The folder was added, but the scan could not refresh the purpose-folder list.");
     }
     showPage("purpose");
-    appNotice.textContent = `Added ${result.entry.name} to your purpose folders.`;
-    appNotice.hidden = false;
+    setAppStatus(`Added ${result.entry.name} to your purpose folders.`);
   } catch (error) {
-    appNotice.textContent = `Could not add that folder: ${error.message}`;
-    appNotice.hidden = false;
+    setAppStatus(`Could not add that folder: ${error.message}`, { error: true });
   } finally {
     addPurposeFolderButton.disabled = false;
   }

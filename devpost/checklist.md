@@ -60,6 +60,10 @@ Build mode: learn
 
 ## Final Review
 
+- [x] Shorten review navigation buttons to “Organize Files” and “Delete Files”; keep counts on the review pages.
+- [x] Show a visible “Still processing” status during scans and file actions.
+- [x] Show compact source-to-destination locations on move cards with expandable full paths.
+- [x] Increase gray background decoration visibility modestly without competing with content.
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
@@ -86,3 +90,5 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Slice 3 learner check — confirmed the browsing, search, preview, and open work was good and asked to proceed to Slice 4.
 - Slice 4 review layout revision — Paul requested safe previews on deletion candidates and 5/10/50-card page sizes for both deletion review and move suggestions. The deletion page changes from one-at-a-time cards to a paged grid; each file still requires its own Keep or confirmed Delete decision.
 - Slice 4 Windows learner check — confirmed scanning and both review pages work after the duplicate timestamp fix; preview and the 5/10/50 controls work. Paul tested Delete on an actual old file and confirmed it was recoverable from the Windows Recycle Bin.
+- Final-review feedback — Paul asked for shorter review navigation labels without button counts, visible processing status, less overwhelming move-card locations, and slightly more visible background icons. The revised labels are “Organize Files” and “Delete Files”; counts stay on-page, paths can expand, and processing notices remain visible while work is underway.
+- Final-review retry — Paul confirmed the shortened buttons, on-page counts, processing message, compact/expandable locations, and adjusted decoration visibility look good.
