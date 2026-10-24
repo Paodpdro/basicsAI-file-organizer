@@ -42,7 +42,7 @@ async function scanDirectory(root, directoryPath, files) {
   try {
     entries = await fs.readdir(directoryPath, { withFileTypes: true });
   } catch (error) {
-    return [{ path: directoryPath, message: error.message }];
+    return [{ path: directoryPath, message: error.message, kind: "folder" }];
   }
 
   const errors = [];
@@ -55,7 +55,11 @@ async function scanDirectory(root, directoryPath, files) {
       realEntryPath = await fs.realpath(entryPath);
       if (!isInsideRoot(root.canonicalPath, realEntryPath)) continue;
     } catch (error) {
-      errors.push({ path: entryPath, message: error.message });
+      errors.push({
+        path: entryPath,
+        message: error.message,
+        kind: entry.isFile() ? "file" : "folder"
+      });
       continue;
     }
 
@@ -72,7 +76,7 @@ async function scanDirectory(root, directoryPath, files) {
           modifiedAt: stats.mtime.toISOString()
         });
       } catch (error) {
-        errors.push({ path: entryPath, message: error.message });
+        errors.push({ path: entryPath, message: error.message, kind: "file" });
       }
     }
   }

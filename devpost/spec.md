@@ -14,18 +14,18 @@ This is a Windows desktop app made with Electron. Electron opens a normal app wi
 
 The screen is not allowed to reach into the computer's files directly. A small, limited connection asks the Electron main part to scan or change only the six approved personal folders. That part uses Node.js to inspect real files, create real folders, move accepted files, and send deletion candidates to the Windows Recycle Bin only after confirmation. The screen receives a safe summary and shows it to Paul. This separation helps prevent a mistaken screen action from operating on system folders.
 
-The first version uses clear local rules, not an AI model or an internet service. It can use names, file types, sizes, dates, and locally extracted text from supported text and PDF files to suggest a folder. Paul reviews each suggestion. A purpose-based folder is a real folder under a useful general folder—such as Research under Documents or Qatar Images under Pictures—and the purpose page is an index to these folders wherever they live. Paul can name a folder; the app can suggest a name and a standard parent location.
+The first version uses clear local rules, not an AI model or an internet service. It can use names, file types, sizes, dates, and locally extracted text from supported text and PDF files to suggest a folder. Paul reviews one file per move card. A purpose-based folder is a real folder under a useful general folder—such as Research under Documents or Qatar Images under Pictures—and the purpose page is an index to these folders wherever they live. Paul can name a folder; the app can suggest a name and a standard parent location.
 
 ## The Core Journey Through the System
 PRD ref: `prd.md > The Core Journey`.
 
 1. Paul starts the app in Windows. The Electron main part locates the six standard personal folders and starts a scan.
 2. The scanner lists files under those folders, ignoring system/application locations and paths that lead outside the allowed roots. It gathers file properties and extracts text locally from supported files. Nothing is uploaded.
-3. The suggestion builder compares the gathered information with known folder names and simple keyword/type rules. It prepares organization suggestions and cautious deletion candidates. The scan does not change any file.
+3. The suggestion builder first identifies files already inside meaningful project/topic folders, then compares remaining files with known folder names and simple keyword/type rules. It prepares individual organization suggestions, an “Already organized” summary, and cautious deletion candidates. The scan does not change any file.
 4. The screen shows the purpose-folder index, or the general-folder cards when no purpose folders are registered. Search and browse show files from the current scan.
-5. For a move suggestion, Paul sees the file and its source and proposed destination. Accept or Reject opens a confirmation. After confirmation, the main part rechecks the paths, creates the real destination folder if needed, and moves the file. The screen refreshes; the same folder and move are visible in Windows File Explorer. Rejecting skips the suggestion until a later scan.
+5. For each move card, Paul sees one file's source path, proposed destination, and review-only preview. The main part resolves a destination-name collision with the first available numbered suffix and shows that exact path before approval. Only clicking Approve moves the file; the main part rechecks paths and collision state, creates the real destination folder if needed, and never overwrites. The screen refreshes, and the move is visible in Windows File Explorer. Skip for now dismisses that suggestion for the current review.
 6. For a deletion candidate, Paul sees its reason tag and path. After confirming Delete, the main part sends the file to the Recycle Bin; Keep leaves it in place. A file is never deleted automatically.
-7. Preview requests supported file contents through the limited connection. Open asks Windows to use its usual application. Rescan repeats steps 2–3 and refreshes both suggestion lists.
+7. Move-review previews show a bounded thumbnail for PNG/JPG/GIF/WebP, up to the first 50 KB of TXT/MD/JSON/CSV/JS as plain text, or “Preview unavailable” with file metadata for other types. Preview errors are visible. Open asks Windows to use its usual application. Rescan repeats steps 2–3 and refreshes the suggestions and summaries.
 
 ## Stack
 - **Electron** — opens a standalone Windows window and provides the main/preload/renderer separation. Documentation: [Electron documentation](https://www.electronjs.org/docs/latest/), [process model](https://www.electronjs.org/docs/latest/tutorial/process-model), [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc), [security](https://www.electronjs.org/docs/latest/tutorial/security).
@@ -59,7 +59,7 @@ Creates the app window, identifies the standard Windows personal-folder paths, c
 PRD ref: `prd.md > Scanning and organization suggestions`, `Deletion review`, and `Access problems`.
 
 ### Preload Bridge
-Exposes a small, explicit set of actions to the screen—start/rescan, list folders/files, search, preview, open, and confirm a move or deletion. Use Electron `contextBridge`/IPC with `contextIsolation: true`, `nodeIntegration: false`, and sandboxing where compatible. Do not expose raw `fs`, arbitrary path operations, or unrestricted shell commands to the screen.
+Exposes a small, explicit set of actions to the screen—start/rescan, list folders/files, search, preview one file, approve/skip one move, open, and confirm a deletion. Use Electron `contextBridge`/IPC with `contextIsolation: true`, `nodeIntegration: false`, and sandboxing where compatible. Do not expose raw `fs`, arbitrary path operations, or unrestricted shell commands to the screen.
 PRD ref: `prd.md > Browsing and searching`, `Scanning and organization suggestions`, `Deletion review`, and `Access problems`.
 
 ### Renderer Interface
@@ -71,7 +71,14 @@ Finds Documents, Downloads, Desktop, Pictures, Music, and Videos for the current
 PRD ref: `prd.md > Scanning and organization suggestions` and `Access problems`.
 
 ### Local File Analyzer and Suggestion Builder
-Collects file name, extension/type, byte size, modified date, and other useful basic properties. Extracts local text from supported plain-text files and PDFs with PDF.js; reads no file contents over a network. Image files use names and file properties only—no OCR in this version. Uses simple, explainable keyword and file-type rules that relate contents/properties to existing purpose-folder names and the six standard parent folders. It can suggest a purpose-folder name and parent when a grouping is apparent; Paul reviews the suggestion before anything is created or moved.
+Collects file name, extension/type, byte size, modified date, and other useful basic properties. Extracts local text from supported plain-text files and PDFs with PDF.js; text extraction is limited to 512 KB for text files and 6 MB/four pages for PDFs. Do not create a separate failed-text-extraction list or warning heading on the home or general-folders screen; that list is out of scope. An extraction failure alone does not make a file a safety skip: continue with safe metadata when possible. Put only files that cannot be safely inspected or handled, such as unreadable or locked files, in the collapsed skipped-files disclosure with a reason. Reads no file contents over a network. Image files use names and file properties only for suggestions—no OCR in this version.
+
+Only analyze and suggest eligible loose files whose parent is directly one of the six standard folders. Files below that level are already organized: do not extract their contents or suggest moving them; summarize each non-empty top-level subfolder and its total file count under “Already organized.” If a standard folder itself contains project markers such as `.git`, `package.json`, an `.ino` sketch, a `.sln` file, or both a `.py` file and `requirements.txt`, protect its direct files too and summarize the standard folder as already organized.
+
+For remaining files, use simple, explainable keyword and file-type rules that relate names, supported local text, and file properties to purpose-folder names and the six standard parent folders. Create one suggestion per file and show it as an individual card; do not group by destination.
+
+### Safe Single-File Preview
+The renderer requests a preview for one file's individual move card. The main process revalidates its path under the approved roots. Return a bounded thumbnail for PNG/JPG/GIF/WebP, or at most the first 50 KB of TXT/MD/JSON/CSV/JS as plain text. Other files, including PDF, show “Preview unavailable” with file name, byte size, type, current path, and destination. Never interpret text as HTML or send original image bytes to the renderer; return only the bounded thumbnail. If reading or decoding fails, return a visible error with file metadata. Preview has no move action; only the card's Approve action can move a file.
 
 For deletion tags, **duplicate** means matching SHA-256 content hashes, not merely matching names. **Old** means last modified more than one year ago; use a last-opened date only if Windows supplies a trustworthy value, otherwise do not infer it. **Possibly unused** remains a cautious rule-based hint, never proof that a file is safe to remove. Rules are local and transparent; they do not provide AI-level understanding.
 PRD ref: `prd.md > Scanning and organization suggestions` and `Deletion review`.
@@ -81,7 +88,7 @@ Stores the user's names and the real absolute paths of purpose folders, which ma
 PRD ref: `prd.md > Browsing and searching`, `Scanning and organization suggestions`, and `Product Decisions`.
 
 ### File Operation Handler
-Revalidates a confirmed move against the allowed roots, creates the selected real folder when needed, and moves the actual file. A confirmed delete uses Electron's Recycle Bin operation (`shell.trashItem`) rather than permanent unlinking. If the operation fails, preserve the source, report the exact failure clearly, and do not show success.
+Revalidates one approved file against the allowed roots, creates the selected real folder when needed, and moves the file without overwriting. If the intended name exists, add the first available number before the extension (for example, `report (2).pdf`) and show the exact destination in the preview. Use an exclusive destination create to prevent a race from overwriting a file. If a collision appears after preview, refresh the proposed name and require approval for that changed destination. A confirmed delete uses Electron's Recycle Bin operation (`shell.trashItem`) rather than permanent unlinking. If an operation fails, preserve the source, report the exact failure clearly, and do not show success.
 PRD ref: `prd.md > Scanning and organization suggestions`, `Deletion review`, and `States and Boundaries`.
 
 ### Search, Preview, and Open
@@ -95,7 +102,10 @@ PRD ref: `prd.md > States and Boundaries` and `Product Decisions`.
 ## Data Model
 - **Allowed roots:** Derived from Windows known-folder paths for the current user. These are the six scan roots. Every discovered file path must remain within one of these roots after normalization; do not follow links/reparse points outside them.
 - **File record (memory during scan):** `path`, `name`, `extension`, `sizeBytes`, `modifiedAt`, optional reliable `accessedAt`, and optional extracted text used only for the current scan/preview.
-- **Move suggestion (memory):** `filePath`, `sourcePath`, `destinationRoot`, `purposeFolderName` or existing folder path, short reason, and status (`pending`, `accepted`, `rejected`). On confirmation, the real filesystem operation runs; then the scan view refreshes.
+- **Move suggestion (memory):** one file's source root/path and metadata, proposed destination folder/path, reason, and review status. Each file is approved or skipped independently.
+- **Already organized summary (memory):** names, paths, and file counts for non-empty top-level subfolders, plus any standard root protected by project markers. These are not move suggestions or skipped files.
+- **Skipped file (memory):** file name, source path, and reason it cannot be safely handled (for example, unreadable or locked). Files with no matching destination rule and text-extraction failures that still allow safe metadata-based handling are not listed as skipped.
+- **Preview result (memory):** safe type, file name, byte size, current path, proposed destination, and either a bounded thumbnail or at most 50 KB of plain-text content. No preview action changes the file.
 - **Deletion suggestion (memory):** `filePath`, reason tags, hash only when needed for duplicate checking, and review status. Confirmed deletion sends the file to Recycle Bin.
 - **Purpose-folder index (local JSON):** entries of `{ name, path, parentType }`. Update after the user creates or accepts a folder; validate paths at load and use. If a path no longer exists, show it as unavailable and let the user remove or repair the entry.
 - **UI preferences (local JSON):** current grid/list choice and last selected page if useful. No account or sync.
@@ -142,18 +152,21 @@ project/
 ## Important Failure Modes
 - **A personal folder is inaccessible or missing** → identify it and show a copyable path; continue with accessible roots and clearly report partial scan results.
 - **A file changes or disappears after scan, or a move/trash operation is refused** → recheck immediately before acting; preserve the original, show a clear error, and refresh the affected view only after success.
-- **A file is unsupported, corrupt, or cannot be parsed for Preview/text** → show Preview unavailable or a text-extraction warning and offer Open; still use safe metadata for other suggestions. Never claim that unreadable means useless.
+- **A move-review preview is unsupported, corrupt, or unreadable** → show Preview unavailable with file name, size, type, current path, and destination; show a visible error if reading/decoding fails. Offer Open only in the general browsing experience. A text-extraction failure does not create a separate warning list; use safe metadata where possible. A file that cannot be safely handled is listed only in the skipped-files disclosure. Never claim unreadable means useless.
+- **A destination name already exists** → propose the first available numbered suffix and show it before approval; never overwrite. If the candidate changes before the move, refresh the preview and require approval for the new path.
 - **A path points outside the six allowed roots** → reject the operation and report that the location is outside the scan boundary.
 
 ## What Was Simplified and Why
 - **Rule-based local suggestions** instead of an AI model — avoids accounts, keys, cost, and uploading sensitive student documents; suggestions are less context-aware and always require review.
 - **Six known personal folders** instead of crawling an entire drive — avoids system/application files and keeps the scan bounded; additional personal roots can be added later.
 - **Text and PDF content extraction; image metadata only** instead of understanding every file format — keeps dependencies and scan behavior small. Unsupported formats still have Open.
+- **No separate failed-text-extraction list** — this list is out of scope. Only files the app cannot safely handle appear in the skipped-files disclosure; files with safe metadata may still receive suggestions.
 - **Purpose-folder index stored as local JSON** instead of a database or virtual file system — the folders are real paths in File Explorer; JSON only remembers how to find them in the app.
 - **Single-user, single-Windows profile** instead of accounts or WSL support — matches the demo boundary and avoids sync/permission complexity.
 - **Recycle Bin for confirmed deletion** instead of permanent deletion — the file leaves its original location but can be recovered through Windows.
 
 ## Decisions and Open Issues
+- **Learner-approved revision:** Replace destination-group suggestions with individual per-file move cards; protect meaningful project/topic folders and summarize them as “Already organized”; reserve the skipped-files disclosure for files the app cannot safely handle; remove the separate failed-extraction list as out of scope; preview the specified images/text with visible errors; show collision suffixes before approval and never overwrite.
 - **Learner choice:** Build a standalone Windows app, not a browser website; use Electron with plain HTML/CSS/JavaScript. Tradeoff: desktop setup is required, but the app can work with real Windows files.
 - **Learner choice:** Develop/edit in WSL but run and test the app in Windows. The workspace path and Windows Node.js access must be verified in the first build step.
 - **Learner choice:** Use the six standard folders as initial scan roots and leave adding arbitrary roots for later.

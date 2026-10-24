@@ -13,7 +13,7 @@ Build mode: learn
 
 ## Slices
 
-- [ ] **1. Browse the six real Windows folders in the desktop app**
+- [x] **1. Browse the six real Windows folders in the desktop app**
   Becomes usable: A running Electron app scans Documents, Downloads, Desktop, Pictures, Music, and Videos, shows them as square, rounded cards, and lets Paul open a folder to see its files and last-modified dates. Rescan refreshes the view, and inaccessible folders show a clear path/error.
   Why now: Bootstraps the app while proving the riskiest foundation early: Electron can run on Windows, safely identify the six real folders, and display actual files without changing anything.
   PRD ref: `prd.md > The Core Journey` (steps 1–4), `Screens and Layout`, `Browsing and searching`, and `Access problems`
@@ -23,14 +23,14 @@ Build mode: learn
   Learner check: Start the app in Windows, open Downloads and another available folder, and compare a few displayed names with File Explorer. Try Rescan and tell me whether the folder cards and file list feel clear.
   Commit: `Add safe Windows folder browsing`
 
-- [ ] **2. Suggest purpose folders and move real files only after confirmation**
-  Becomes usable: A scan proposes useful folders and locations from file names, properties, and supported local text/PDF content. Paul can review one move at a time, see its source and destination, confirm or reject, and see accepted files and created folders in File Explorer.
+- [x] **2. Review individual purpose-folder moves safely**
+  Becomes usable: A scan suggests moves only for eligible loose files directly inside the six standard folders. Files already in subfolders—and direct files in a root containing project markers—are left alone and summarized as “Already organized.” Truly unsafe files appear in a collapsed skipped-files list, and each move card shows its file’s current path, proposed destination, and safe preview before Paul approves that move.
   Why now: Delivers the unique kernel early: purpose-based real folders under useful standard folders, not just a generic file browser. It also tests content extraction and real moves before adding optional features.
   PRD ref: `prd.md > The Core Journey` (step 5), `Screens and Layout`, `Scanning and organization suggestions`, and `Product Decisions`
   Spec ref: `spec.md > The Core Journey Through the System`, `Local File Analyzer and Suggestion Builder`, `Purpose-Folder Index`, `File Operation Handler`, `Local Preferences`, `Data Model`, and `What Was Simplified and Why`
-  Build: Add local metadata/text/PDF analysis and explainable destination suggestions; create the purpose-folder index; allow Paul to name a folder and accept suggested folder names/locations; add one-at-a-time source/destination review and confirmation; create real folders and move actual files only after a confirmed accept; skip rejected suggestions until a later scan.
-  Verify (mechanical): Run `node --test`; using temporary test folders, verify suggestions do not modify files, rejected suggestions leave files untouched, confirmed moves create the destination and preserve file contents, and paths outside allowed roots are rejected. In Windows, confirm an accepted move appears in File Explorer and the purpose-folder index.
-  Learner check: Put copies of a few test files in a scanned folder, run a scan, and inspect the suggested purpose and source/destination paths. Reject one and accept another; confirm the rejected file stays put and the accepted file appears at its new location in File Explorer.
+  Build: Analyze only loose files directly inside the six standard folders and create explainable per-file suggestions; leave nested folder contents untouched and summarize each non-empty top-level subfolder as already organized; protect direct files in roots containing project markers; show only unsafe-to-handle files in the collapsed skipped-files disclosure; create the purpose-folder index; allow Paul to adjust each file’s folder name and parent; show a safe per-file preview and visible errors; suffix destination-name collisions without overwriting; approve or skip each file independently.
+  Verify (mechanical): Run `node --test`; temporary fixtures verify only root-level loose files receive suggestions, nested folders (including “1.Bun” and “QU”) are summarized and never analyzed for suggestions, project-marked roots are protected, acronym-named PDF/text suggestions do not modify files, files appear as individual suggestions, only unreadable/unsafe files are skipped, no failed-extraction list is produced, per-file skip leaves the file untouched, approval moves one file while preserving contents, collisions use visible numbered suffixes and never overwrite, paths outside allowed roots are rejected, previews obey image/text/unavailable rules and show errors, and purpose folders are recorded in the local index. On Windows, confirm an accepted move and suffix appear in File Explorer.
+  Learner check: Put disposable copies of a text/PDF file directly in a scanned folder and related files in existing subfolders such as “1.Bun” or “QU.” Confirm only the loose files receive move cards and each subfolder appears as “Already organized.” Preview and skip one loose file, confirming it remains in place; rescan and approve a different disposable file, then confirm its destination (including any suffix) and purpose folder in File Explorer.
   Commit: `Add reviewed purpose-based file moves`
 
 - [ ] **3. Browse, search, preview, and open files**
@@ -55,7 +55,7 @@ Build mode: learn
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after Slice 1, try the Windows folder cards and file list; feedback can shape navigation and clarity before organization suggestions are added.
+- [x] Early usable behavior explored — confirmed folder browsing works, compared the displayed files with Explorer, and refined the palette, card shape, header, button, dates, and background icons through hands-on feedback before organization suggestions were added.
 - [ ] Final kick-the-tires exploration and feedback completed — after all slices, try the full scan, organization, browsing, preview/open, and deletion flows in Windows.
 
 ## Final Review
@@ -75,6 +75,9 @@ Reflection: [offered/answered/declined/already covered — personal answer belon
 Activity mode: [live app and editor, explicit static fallback, focused alternative, prior practice, or recap]
 
 ## Revisions
+- Slice 2 interaction revision — learner approved individual per-file cards instead of grouped destination cards, protection and “Already organized” summary, skipped disclosure limited to files unsafe to handle, removal of the failed-extraction list as out of scope, visible preview errors, and collision suffixes shown before approval with no overwrites. Later loose-root feedback refines the protection rule.
+- Superseded Slice 2 interaction revision — an earlier draft called for destination-group cards, grouped file-type counts, and group-level approve/skip. The learner later approved individual per-file cards instead; only that newer behavior is in scope.
+- Slice 2 Windows learner feedback — the first check found suggestions inside existing Documents subfolders such as “1.Bun” and “QU.” Paul requested loose-root files only; nested folder contents must be left untouched and summarized as “Already organized.” PRD, spec, implementation, and learner check were updated; the Windows retest confirmed nested files are left alone and loose files remain eligible.
 - Slice 1 visual feedback — shifted the palette to blue-dominant with gold accents and sparing white, removed the yellow hover fill, and enlarged folder cards; the learner confirmed the original screen behavior worked and clarified that opening/previewing files belongs to Slice 3.
 - Follow-up visual feedback — the blue-heavy screen felt too much and the cards too rectangular; softened the palette with a pale-yellow canvas, white panels/cards, smaller blue accents, and rounder, gently raised cards for a friendlier feel.
 - Latest Slice 1 feedback — made folder cards square with rounded corners, bold icons, and a thick bottom edge; gave Rescan a distinct blue with hover/focus states; added readable modified dates and an “Unknown” fallback.
