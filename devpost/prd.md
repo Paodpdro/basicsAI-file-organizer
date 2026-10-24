@@ -22,7 +22,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 7. He can rescan at any time to refresh both organization suggestions and deletion candidates.
 
 ## Screens and Layout
-- **Purpose-based folders:** The home page when at least one such folder exists. Shows folders Paul uses, such as coding, Webtech 2, or research for a specific subject.
+- **Purpose-based folders:** The home page when at least one such folder exists. It is an index to real folders nested under the most useful general folder—for example, Research under Documents, Minecraft under Desktop, or Qatar Images under Pictures. Paul names folders; the app may suggest useful names and locations.
 - **General folders:** A grid of the familiar Documents, Downloads, Desktop, Pictures, Music, and Videos folders. These folders remain present and are not replaced.
 - **Folder contents:** Opens when Paul chooses a purpose-based or general folder. Offers grid and list layouts, a way to switch between them, and file actions for Preview and Open.
 - **Organization suggestions:** Shows one proposed file move at a time in an easy-to-read grid/card layout. Shows the file, its current location, and its proposed destination, with Accept and Reject actions at the bottom right.
@@ -42,7 +42,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 ### Browsing and searching
 Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Boundary`.
 - Display the familiar general folders as cards and preserve those folders on the computer.
-- Provide a distinct place to browse purpose-based folders and another for Windows-related extras found in accessible personal folders.
+- Provide a distinct index to purpose-based folders and another page for Windows-related extras found in accessible personal folders. Purpose-based folders are real folders under their appropriate general location, not app-only groupings.
 - Within an opened folder, show files in either grid or list layout. Paul can change the layout.
 - Provide search across the accessible personal files this version can see.
 - For a file, Preview attempts to show its contents inside the app; Open launches it the usual way on the computer.
@@ -51,9 +51,10 @@ Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Bo
 
 ### Scanning and organization suggestions
 Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
-- Scan accessible personal folders when the app opens. Provide a Rescan action to refresh results later. Windows extras come from eligible personal folders, not Windows or application/system folders.
+- Scan Documents, Downloads, Desktop, Pictures, Music, and Videos and their subfolders when the app opens. Provide a Rescan action to refresh results later. Windows extras come from these eligible personal folders, not Windows or application/system folders. Adding other scan locations is deferred.
 - A scan prepares both organization suggestions and deletion candidates.
 - Suggest useful destinations, including general folders and purpose-based folders. Example: suggest moving student photos, an ID, and grades from Downloads into a student-records folder under Documents; other examples include Webtech 2 or research for a specific subject.
+- Let Paul name purpose-based folders, while also allowing the app to suggest folder names and the most useful standard parent location. The purpose-based page links to these real folders wherever they live.
 - Present proposed moves one at a time. Each suggestion clearly identifies the file, its current location, and its proposed destination in a readable folder path/structure.
 - Accept and Reject are visible at the bottom right of the suggestion.
 - Ask for confirmation before applying either decision. After confirmation, acceptance moves the file; rejection skips it for now and does not save a permanent rejection preference.
@@ -63,6 +64,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 ### Deletion review
 Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Boundary`.
 - Show possible deletion candidates one at a time, each with an understandable reason tag, such as **duplicate**, **old**, or **possibly unused**, and its current location.
+- Treat identical file contents as duplicates, not matching names alone. “Old” means last modified more than one year ago. Show “possibly unused” only when a reliable last-opened date older than one year is available.
 - Present candidates as suggestions, not certainty that a file is useless. Paul decides whether to keep or delete each one.
 - Ask for confirmation before applying the choice. Keep leaves the file in place; confirmed Delete removes it.
 - When there are no candidates, show a friendly message such as “Your files are clean.”
@@ -82,18 +84,20 @@ Source: `scope.md > The POC Boundary`.
 - **Move suggestion accepted:** Confirm first; create the destination folder in the real file system if it does not exist, move the actual file, and reflect the change in both the app and File Explorer.
 - **Suggestion rejected:** Confirm first, then skip it for now. It is not a permanent preference and may appear again after a later scan.
 - **Deletion candidate:** No file is deleted until Paul confirms Delete.
-- **Scan boundary:** Only accessible personal folders are eligible. Windows, Program Files, and other system/application folders are excluded.
+- **Scan boundary:** The first version scans the six standard personal folders and their subfolders. Windows, Program Files, and other system/application folders are excluded; custom scan locations are deferred.
 
 ## Product Decisions
 - Keep Documents, Downloads, Desktop, Pictures, Music, and Videos as familiar general-folder cards; organize files into these or purpose-based folders rather than removing the standard folders.
+- Treat the purpose-based page as an index to real folders under the general folders, with Paul naming them and the app able to suggest names and useful parent locations.
 - Make purpose-based folders the home page when they exist; fall back to the general-folder cards before any purpose-based folders have been created.
 - Separate purpose-based folders, general folders, and Windows extras into distinct pages.
-- Scan when the app opens and allow a manual rescan; each scan prepares both move suggestions and deletion candidates.
+- Scan the six standard personal folders and their subfolders when the app opens; allow a manual rescan. Each scan prepares both move suggestions and deletion candidates.
 - Review each move or deletion candidate one at a time. Show current and proposed locations for moves, and a reason tag and current location for deletion candidates.
 - Confirm before accepting or rejecting a move suggestion and before keeping or deleting a deletion candidate. Rejections skip suggestions only for now.
 - Create a missing destination folder in the real file system only after Paul confirms acceptance, then move the actual file there. Changes must be visible in File Explorer and the app; this is not an app-only organization or simulated view.
 - Aim for a friendly, Duolingo-like experience with simple animation, approachable colors, concise language, and gentle feedback.
 - Limit deletion labels to understandable possibilities such as duplicate, old, and possibly unused. Virus/malware detection is out of scope.
+- Use exact-content matches for duplicate tags, a one-year last-modified threshold for old tags, and a reliable last-opened date older than a year for possibly-unused tags.
 - If a folder is inaccessible, provide its path so Paul can locate it through File Explorer.
 
 ## What We're Building
@@ -103,7 +107,7 @@ Source: `scope.md > The POC Boundary`.
 - One-at-a-time move suggestions with source and destination paths, confirmation, accept/reject, and skip-for-now behavior; confirmed moves and folder creation modify the real file system and appear in File Explorer.
 - One-at-a-time deletion suggestions with reason tags, current path, confirmation, and a reassuring empty state.
 - Safe handling of inaccessible folders with a visible, copyable folder path.
-- Restrict scanning and organizing to accessible personal folders; leave system/application folders alone.
+- Restrict scanning and organizing to the six standard personal folders and their subfolders; leave system/application folders alone. Adding custom scan locations is deferred.
 
 ## Deferred From the POC
 - A Windows–WSL unified file bridge — explicitly deferred in `scope.md > Later` and `Explicitly Cut`.
@@ -122,6 +126,6 @@ Source: `scope.md > The POC Boundary`.
 - Detect viruses or malware.
 - Build a complete replacement for Windows File Explorer.
 
-## Open Questions
-- What exact signals or age threshold should label a file as **old** or **possibly unused**? Resolve in `4-spec` or during implementation; do not claim that these labels prove a file is safe to delete.
-- Which file formats can be previewed in the proof of concept? Resolve in `4-spec`; unsupported formats must use the unavailable message and Open fallback.
+## Requirements Clarified in 4-spec
+- “Old” means more than one year since last modification. “Possibly unused” is shown only when Windows provides a reliable last-opened date older than one year; neither tag proves that a file is safe to delete.
+- Preview supports images, plain text, and PDF in the proof of concept; unsupported formats use the unavailable message and Open fallback.
