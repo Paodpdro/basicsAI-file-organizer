@@ -64,19 +64,19 @@ Build mode: learn
 - [x] Show a visible “Still processing” status during scans and file actions.
 - [x] Show compact source-to-destination locations on move cards with expandable full paths.
 - [x] Increase gray background decoration visibility modestly without competing with content.
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirmed the proof of concept is ready for its demo
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — brief recap connected the scan crash, its test, and the reusable habit of checking real data shapes; learner declined the guided tour
+- [x] Optional edit and transfer reflection addressed — not applicable after the learner declined the activity
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [what actually happened; real document/test/code references; unfinished work if interrupted]
-Route and stops: [actual paths and symbols; guided stops completed, or reference-only route]
-Edit outcome: [tried/kept/reverted/declined/not applicable; verification if changed]
-Reflection: [offered/answered/declined/already covered — personal answer belongs only in the ignored profile]
-Activity mode: [live app and editor, explicit static fallback, focused alternative, prior practice, or recap]
+Activity and evidence: Brief evidence-based recap of the equal-timestamp scan crash: `src/main/deletion-review.js > buildDeletionCandidates` used the scan record's actual `path` field; the tied-timestamp fixture in `test/deletion-review.test.js` now exercises the tie-break. The learner declined a guided code tour and said the POC looks good for its demo.
+Route and stops: Reference-only route in `devpost/app-map.html`: `src/main/main.js > folders:scan`; `src/main/deletion-review.js > buildDeletionCandidates` and `createDeletionReviewQueue`; `src/renderer/app.js > scanFolders` and `renderDeletionReview`. Not toured live.
+Edit outcome: Not applicable — guided activity declined; no edit made.
+Reflection: Not offered — the learner declined the activity and moved to demo preparation.
+Activity mode: Brief evidence-based recap; guided route declined. App map prepared as a take-home reference.
 
 ## Revisions
 - Slice 2 interaction revision — learner approved individual per-file cards instead of grouped destination cards, protection and “Already organized” summary, skipped disclosure limited to files unsafe to handle, removal of the failed-extraction list as out of scope, visible preview errors, and collision suffixes shown before approval with no overwrites. Later loose-root feedback refines the protection rule.
@@ -92,3 +92,4 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Slice 4 Windows learner check — confirmed scanning and both review pages work after the duplicate timestamp fix; preview and the 5/10/50 controls work. Paul tested Delete on an actual old file and confirmed it was recoverable from the Windows Recycle Bin.
 - Final-review feedback — Paul asked for shorter review navigation labels without button counts, visible processing status, less overwhelming move-card locations, and slightly more visible background icons. The revised labels are “Organize Files” and “Delete Files”; counts stay on-page, paths can expand, and processing notices remain visible while work is underway.
 - Final-review retry — Paul confirmed the shortened buttons, on-page counts, processing message, compact/expandable locations, and adjusted decoration visibility look good.
+- Future AI preference — Paul would like AI-assisted file assessment in a later version. It is deferred beyond this POC until the privacy approach for reading personal file contents is decided.

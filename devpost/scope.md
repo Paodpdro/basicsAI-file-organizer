@@ -42,6 +42,7 @@ In a short demo, Paul sees grid cards for Documents, Downloads, Desktop, Picture
 ## Later
 - Reach Windows files and WSL Ubuntu files as one place, including searching or copying between them.
 - More sophisticated cleanup and categorization beyond the proof of concept.
+- AI-assisted file assessment after deciding how file contents remain private, such as on-device analysis versus explicitly approved cloud processing.
 - A richer library of folder types, templates, and browsing views.
 
 ## Explicitly Cut

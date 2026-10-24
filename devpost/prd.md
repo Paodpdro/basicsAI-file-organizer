@@ -127,6 +127,7 @@ Source: `scope.md > The POC Boundary`.
 ## Possible Later Enhancements
 - Add a Windows–WSL unified view if the first version proves useful.
 - Expand supported file previews and improve cleanup suggestions.
+- Add AI-assisted file assessment only after choosing a privacy-preserving model and deciding whether any file contents may leave the computer. This is not part of the current proof of concept.
 - Add richer purpose-folder organization and browsing options.
 
 ## Non-Goals

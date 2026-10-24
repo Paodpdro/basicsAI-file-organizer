@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Personal File Organizer — App Map</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font: 16px/1.55 system-ui, sans-serif;
+        color: #183b56;
+        background: #fff8df;
+        --blue: #174b70;
+        --blue-light: #e7f2fa;
+        --line: #d9e5ec;
+        --muted: #526c7d;
+        --card: #fffdf5;
+        --red: #842b22;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      header { padding: 2rem max(1.25rem, calc((100vw - 900px) / 2)); background: #2672ad; color: #fff; border-bottom: 5px solid #1f5f99; }
+      h1, h2, h3 { line-height: 1.2; }
+      h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.3rem); }
+      header p { margin: .5rem 0 0; }
+      main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+      section { margin: 1.25rem 0; padding: 1.25rem; border: 1px solid #f0e4bd; border-radius: 20px; background: var(--card); box-shadow: 0 4px 0 rgb(23 75 112 / 8%); }
+      h2 { margin: 0 0 .65rem; color: var(--blue); font-size: 1.3rem; }
+      h3 { margin: .2rem 0; color: var(--blue); font-size: 1.05rem; }
+      p { margin: .45rem 0; }
+      a { color: #174b70; text-underline-offset: .16em; }
+      a:focus-visible, summary:focus-visible { outline: 3px solid #b4880b; outline-offset: 3px; border-radius: 3px; }
+      code { padding: .08rem .28rem; border-radius: 5px; background: #eef4f7; font: .9em ui-monospace, monospace; overflow-wrap: anywhere; }
+      .diagram { display: block; width: 100%; height: auto; margin: .75rem 0; border: 1px solid var(--line); border-radius: 14px; background: #f7fbfd; }
+      .diagram text { fill: #174b70; font: 15px system-ui, sans-serif; }
+      .diagram .small { fill: #526c7d; font-size: 12px; }
+      .route { display: grid; gap: .8rem; margin: 0; padding-left: 1.4rem; }
+      .route li { padding-left: .2rem; }
+      .route p { margin: .25rem 0; }
+      .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .8rem; }
+      .mini-card { padding: .9rem; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+      .note { color: var(--muted); }
+      .privacy { border-left: 4px solid #3d8058; padding-left: .8rem; }
+      footer { color: var(--muted); font-size: .9rem; }
+      @media (prefers-reduced-motion: no-preference) {
+        a { transition: color .12s ease; }
+        a:hover { color: #2877ad; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Personal File Organizer — App Map</h1>
+      <p>A small guide to where the scan, file reviews, and safe actions live.</p>
+    </header>
+    <main>
+      <section aria-labelledby="overview">
+        <h2 id="overview">What the app does</h2>
+        <p>The Windows app scans six personal folders, suggests individual file moves, indexes purpose folders, and identifies possible duplicates or old files for review. You choose what to move, keep, or send to the Recycle Bin; the app does not silently change files.</p>
+        <p class="privacy">This proof of concept uses local rules and file checks; it does not include an AI model or upload file contents for analysis. Purpose-folder names are saved locally in Electron’s user-data folder. The heading and body fonts are loaded from Google Fonts when available, with system-font fallbacks.</p>
+      </section>
+
+      <section aria-labelledby="flow">
+        <h2 id="flow">Follow one action: review a deletion candidate</h2>
+        <p>One scan travels from Electron’s main process, through local candidate checks, to a review card in the window. Preview is separate from the Keep or confirmed Delete decision.</p>
+        <svg class="diagram" viewBox="0 0 820 210" role="img" aria-labelledby="diagram-title diagram-description">
+          <title id="diagram-title">Deletion review path through the app</title>
+          <desc id="diagram-description">Windows personal folders are scanned in the main process. Local rules create deletion candidates. The renderer shows preview, Keep, and confirmed Delete actions. A confirmed delete uses the Windows Recycle Bin.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0 0 9 4.5 0 9z" fill="#2877ad"/>
+            </marker>
+          </defs>
+          <rect x="20" y="55" width="170" height="88" rx="14" fill="#fffdf5" stroke="#b9cad6" stroke-width="2"/>
+          <text x="105" y="88" text-anchor="middle">Personal folders</text>
+          <text class="small" x="105" y="112" text-anchor="middle">scan metadata + files</text>
+          <path d="M195 99h44" fill="none" stroke="#2877ad" stroke-width="3" marker-end="url(#arrow)"/>
+          <rect x="250" y="40" width="220" height="118" rx="14" fill="#e7f2fa" stroke="#8cb5d1" stroke-width="2"/>
+          <text x="360" y="75" text-anchor="middle">Main process</text>
+          <text class="small" x="360" y="100" text-anchor="middle">buildDeletionCandidates</text>
+          <text class="small" x="360" y="122" text-anchor="middle">hash + age rules</text>
+          <path d="M475 99h44" fill="none" stroke="#2877ad" stroke-width="3" marker-end="url(#arrow)"/>
+          <rect x="530" y="40" width="260" height="118" rx="14" fill="#fffdf5" stroke="#b9cad6" stroke-width="2"/>
+          <text x="660" y="75" text-anchor="middle">Review cards</text>
+          <text class="small" x="660" y="100" text-anchor="middle">Preview · Keep · Confirm Delete</text>
+          <text class="small" x="660" y="122" text-anchor="middle">Delete → Windows Recycle Bin</text>
+          <text class="small" x="410" y="190" text-anchor="middle">The user sees the reason and path before deciding.</text>
+        </svg>
+        <ol class="route">
+          <li>
+            <h3>Receive a scan request</h3>
+            <p><a href="../src/main/main.js"><code>src/main/main.js</code></a> — search for <code>ipcMain.handle("folders:scan"</code>. It scans approved roots, builds move and deletion candidates, and returns metadata to the window.</p>
+          </li>
+          <li>
+            <h3>Check candidates and enforce safe decisions</h3>
+            <p><a href="../src/main/deletion-review.js"><code>src/main/deletion-review.js</code></a> — <code>buildDeletionCandidates</code> checks exact-content hashes and the one-year modified-time rule; <code>createDeletionReviewQueue</code> revalidates before Keep or Recycle Bin handling.</p>
+          </li>
+          <li>
+            <h3>Show the review and its result</h3>
+            <p><a href="../src/renderer/app.js"><code>src/renderer/app.js</code></a> — <code>scanFolders</code> receives the scan result, <code>renderDeletionReview</code> displays the paged cards, and each card handles Preview, Keep, or confirmed Delete. Safe previews are prepared by <a href="../src/main/preview.js"><code>src/main/preview.js</code></a>.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="change">
+        <h2 id="change">To change this, start here</h2>
+        <div class="columns">
+          <article class="mini-card">
+            <h3>Review labels or location layout</h3>
+            <p>Start in <a href="../src/renderer/index.html"><code>src/renderer/index.html</code></a> for the navigation labels; use <code>renderMoveSuggestion</code> in <code>src/renderer/app.js</code> for the compact path summary and expandable full paths.</p>
+          </article>
+          <article class="mini-card">
+            <h3>Change deletion rules</h3>
+            <p>Start in <code>buildDeletionCandidates</code> in <code>src/main/deletion-review.js</code>, then adjust the related cases in <a href="../test/deletion-review.test.js"><code>test/deletion-review.test.js</code></a>.</p>
+          </article>
+          <article class="mini-card">
+            <h3>Change colors or processing notices</h3>
+            <p>Start in <a href="../src/renderer/styles.css"><code>src/renderer/styles.css</code></a> for decoration and status appearance, and <code>setAppStatus</code> in <code>src/renderer/app.js</code> for status wording and busy/error state.</p>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="practice">
+        <h2 id="practice">A practice to reuse</h2>
+        <p>This build caught a mismatch between a scanned file record’s <code>path</code> property and the duplicate sorter’s assumed <code>filePath</code>. A tied timestamp made the scan throw and blocked both review pages. The fix and the equal-timestamp fixture show a useful habit: test boundary cases in the real data shape, not just the common case. See “Deletion review” in <a href="./prd.md"><code>devpost/prd.md</code></a> and the duplicate test in <a href="../test/deletion-review.test.js"><code>test/deletion-review.test.js</code></a>.</p>
+      </section>
+
+      <section aria-labelledby="run">
+        <h2 id="run">Run it again</h2>
+        <p>In Windows PowerShell, from the project folder:</p>
+        <p><code>npm install</code> then <code>npm start</code>. Run the automated checks with <code>npm test</code>.</p>
+        <p>Code snapshot: commit <code>dc7839d</code>. This map and the completion record are saved separately; the guide can drift as the code changes.</p>
+      </section>
+
+      <footer>
+        <p>Offline guide; no scripts, build step, or remote resources are required. Reopen it from the project’s <code>devpost/app-map.html</code>.</p>
+      </footer>
+    </main>
+  </body>
+</html>
