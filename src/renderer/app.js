@@ -12,6 +12,7 @@ const purposeSection = document.querySelector("#purpose-section");
 const browserToolbar = document.querySelector("#browser-toolbar");
 const contentsSection = document.querySelector("#contents-section");
 const suggestionsButton = document.querySelector("#suggestions-button");
+const deletionReviewButton = document.querySelector("#deletion-review-button");
 const purposeFoldersButton = document.querySelector("#purpose-folders-button");
 const generalFoldersButton = document.querySelector("#general-folders-button");
 const addPurposeFolderButton = document.querySelector("#add-purpose-folder-button");
@@ -32,12 +33,28 @@ const suggestionProgress = document.querySelector("#suggestion-progress");
 const suggestionNotice = document.querySelector("#suggestion-notice");
 const suggestionEmpty = document.querySelector("#suggestion-empty");
 const suggestionGrid = document.querySelector("#suggestion-grid");
+const movePagination = document.querySelector("#move-pagination");
+const movePageSize = document.querySelector("#move-page-size");
+const movePagePrevious = document.querySelector("#move-page-previous");
+const movePageStatus = document.querySelector("#move-page-status");
+const movePageNext = document.querySelector("#move-page-next");
 const skippedFilesDisclosure = document.querySelector("#skipped-files-disclosure");
 const skippedFilesSummary = document.querySelector("#skipped-files-summary");
 const skippedFilesList = document.querySelector("#skipped-files-list");
 const alreadyOrganizedDisclosure = document.querySelector("#already-organized-disclosure");
 const alreadyOrganizedSummary = document.querySelector("#already-organized-summary");
 const alreadyOrganizedList = document.querySelector("#already-organized-list");
+const deletionSection = document.querySelector("#deletion-section");
+const deletionProgress = document.querySelector("#deletion-progress");
+const deletionNotice = document.querySelector("#deletion-notice");
+const deletionIssues = document.querySelector("#deletion-issues");
+const deletionEmpty = document.querySelector("#deletion-empty");
+const deletionCandidateContainer = document.querySelector("#deletion-candidate");
+const deletionPagination = document.querySelector("#deletion-pagination");
+const deletionPageSize = document.querySelector("#deletion-page-size");
+const deletionPagePrevious = document.querySelector("#deletion-page-previous");
+const deletionPageStatus = document.querySelector("#deletion-page-status");
+const deletionPageNext = document.querySelector("#deletion-page-next");
 
 const folderIcons = {
   documents: "📄",
@@ -51,6 +68,11 @@ const folderIcons = {
 let folders = [];
 let purposeFolders = [];
 let moveSuggestions = [];
+let deletionCandidates = [];
+let deletionReviewIssues = [];
+let deletionReviewedCount = 0;
+let movePage = 0;
+let deletionPage = 0;
 let skippedFiles = [];
 let alreadyOrganized = [];
 let selectedFolder = null;
@@ -67,6 +89,19 @@ let searchTimer;
 
 function setStatus(message) {
   scanStatus.textContent = message;
+}
+
+function renderPagination(length, pageSize, page, controls) {
+  const pageCount = Math.max(1, Math.ceil(length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const first = length === 0 ? 0 : currentPage * pageSize + 1;
+  const last = Math.min(length, (currentPage + 1) * pageSize);
+  controls.status.textContent = length
+    ? `Showing ${first}–${last} of ${length}`
+    : "No items";
+  controls.previous.disabled = currentPage === 0;
+  controls.next.disabled = currentPage >= pageCount - 1;
+  return { start: currentPage * pageSize, end: (currentPage + 1) * pageSize, page: currentPage };
 }
 
 function showMessage(message) {
@@ -243,7 +278,7 @@ function setLayout(mode) {
 
 function showPage(page) {
   if (page !== "contents") directoryRequest += 1;
-  if (["general", "purpose", "suggestions"].includes(page)) {
+  if (["general", "purpose", "suggestions", "deletions"].includes(page)) {
     selectedFolder = null;
     directoryEntries = [];
     if (page === "general") renderFolders();
@@ -254,11 +289,13 @@ function showPage(page) {
   contentsSection.hidden = page !== "contents";
   searchResultsSection.hidden = page !== "search";
   suggestionsSection.hidden = page !== "suggestions";
-  browserToolbar.hidden = page === "suggestions";
+  deletionSection.hidden = page !== "deletions";
+  browserToolbar.hidden = ["suggestions", "deletions"].includes(page);
   purposeFoldersButton.hidden = purposeFolders.length === 0;
   purposeFoldersButton.setAttribute("aria-pressed", String(page === "purpose"));
   generalFoldersButton.setAttribute("aria-pressed", String(page === "general"));
   suggestionsButton.setAttribute("aria-pressed", String(page === "suggestions"));
+  deletionReviewButton.setAttribute("aria-pressed", String(page === "deletions"));
   hideFilePreview();
 }
 
@@ -346,8 +383,8 @@ function setBrowseNotice(message, error = false) {
   notice.classList.toggle("preview-error", error);
 }
 
-function renderBrowsePreview(preview, entry) {
-  filePreviewPanel.replaceChildren(
+function renderBrowsePreview(preview, entry, panel = filePreviewPanel, { showOpen = true } = {}) {
+  panel.replaceChildren(
     makeTextElement("h3", "", preview.fileName || entry.name),
     makeTextElement(
       "p",
@@ -361,30 +398,31 @@ function renderBrowsePreview(preview, entry) {
     image.className = "preview-image";
     image.alt = `Preview of ${preview.fileName}`;
     image.addEventListener("error", () => {
-      filePreviewPanel.append(makeTextElement("p", "preview-error", "The image preview could not be displayed."));
+      panel.append(makeTextElement("p", "preview-error", "The image preview could not be displayed."));
     });
     image.src = preview.dataUrl;
-    filePreviewPanel.append(image);
+    panel.append(image);
   } else if (preview.kind === "text") {
-    if (preview.reason) filePreviewPanel.append(makeTextElement("p", "preview-meta", preview.reason));
-    filePreviewPanel.append(makeTextElement("pre", "preview-text", preview.text));
+    if (preview.reason) panel.append(makeTextElement("p", "preview-meta", preview.reason));
+    panel.append(makeTextElement("pre", "preview-text", preview.text));
     if (preview.truncated) {
-      filePreviewPanel.append(makeTextElement("p", "preview-unavailable", "Preview limited to the first 50 KB."));
+      panel.append(makeTextElement("p", "preview-unavailable", "Preview limited to the first 50 KB."));
     }
   } else if (preview.kind === "error") {
-    filePreviewPanel.append(makeTextElement("p", "preview-error", `Preview error: ${preview.error}`));
+    panel.append(makeTextElement("p", "preview-error", `Preview error: ${preview.error}`));
   } else {
-    filePreviewPanel.append(makeTextElement(
+    panel.append(makeTextElement(
       "p",
       "preview-unavailable",
       `Preview unavailable. ${preview.reason ?? ""}`.trim()
     ));
   }
 
+  if (!showOpen) return;
   const openButton = makeTextElement("button", "button button-secondary", "Open in Windows");
   openButton.type = "button";
   openButton.addEventListener("click", () => openFile(entry));
-  filePreviewPanel.append(openButton);
+  panel.append(openButton);
 }
 
 async function previewFile(entry) {
@@ -703,7 +741,190 @@ function renderSuggestion() {
   alreadyOrganizedSummary.textContent = `Already organized (${alreadyOrganized.length} ${alreadyOrganized.length === 1 ? "folder" : "folders"})`;
   alreadyOrganizedDisclosure.hidden = alreadyOrganized.length === 0;
   renderAlreadyOrganized();
-  suggestionGrid.replaceChildren(...moveSuggestions.map(renderMoveSuggestion));
+  const pageSize = Number(movePageSize.value);
+  const pageRange = renderPagination(moveSuggestions.length, pageSize, movePage, {
+    previous: movePagePrevious,
+    status: movePageStatus,
+    next: movePageNext
+  });
+  movePage = pageRange.page;
+  movePagination.hidden = suggestionCount === 0;
+  suggestionGrid.replaceChildren(
+    ...moveSuggestions.slice(pageRange.start, pageRange.end).map(renderMoveSuggestion)
+  );
+}
+
+function renderDeletionCandidate(candidate) {
+  const card = document.createElement("article");
+  card.className = "deletion-card";
+
+  const heading = document.createElement("div");
+  heading.className = "suggestion-card-heading";
+  heading.append(makeTextElement("h3", "", candidate.fileName));
+  const tags = document.createElement("div");
+  tags.className = "deletion-tags";
+  for (const tag of candidate.reasonTags) {
+    const label = tag === "duplicate"
+      ? "Possible duplicate"
+      : tag === "old"
+        ? "More than one year old"
+        : "Possibly unused";
+    tags.append(makeTextElement("span", "deletion-tag", label));
+  }
+  card.append(heading, tags);
+
+  const reasons = document.createElement("ul");
+  reasons.className = "deletion-reasons";
+  for (const reason of candidate.reasons) {
+    reasons.append(makeTextElement("li", "", reason));
+  }
+  card.append(reasons);
+
+  const details = document.createElement("div");
+  details.className = "deletion-details";
+  details.append(
+    makeTextElement("strong", "", "Current location"),
+    makeTextElement("code", "", candidate.filePath),
+    makeTextElement(
+      "span",
+      "",
+      `${formatBytes(candidate.sizeBytes)} · Modified ${formatModifiedDate(candidate.modifiedAt)}`
+    )
+  );
+  card.append(details);
+
+  const previewButton = makeTextElement("button", "button button-secondary preview-button", "Preview file");
+  previewButton.type = "button";
+  const previewPanel = document.createElement("div");
+  previewPanel.className = "preview-panel";
+  previewPanel.setAttribute("aria-live", "polite");
+  previewPanel.hidden = true;
+  let previewRequest = 0;
+  previewButton.addEventListener("click", async () => {
+    if (!previewPanel.hidden) {
+      previewPanel.hidden = true;
+      previewButton.textContent = "Preview file";
+      return;
+    }
+    previewPanel.hidden = false;
+    previewButton.textContent = "Hide preview";
+    previewPanel.replaceChildren(makeTextElement("p", "preview-unavailable", "Preparing preview…"));
+    const request = ++previewRequest;
+    const entry = {
+      name: candidate.fileName,
+      rootId: candidate.sourceRootId,
+      relativePath: candidate.sourceRelativePath,
+      path: candidate.filePath,
+      sizeBytes: candidate.sizeBytes,
+      modifiedAt: candidate.modifiedAt
+    };
+    try {
+      const preview = await window.organizer.previewFile(entry.rootId, entry.relativePath);
+      if (request !== previewRequest || previewPanel.hidden) return;
+      renderBrowsePreview(preview, entry, previewPanel, { showOpen: false });
+    } catch (error) {
+      if (request !== previewRequest || previewPanel.hidden) return;
+      previewPanel.replaceChildren(
+        makeTextElement("h3", "", candidate.fileName),
+        makeTextElement(
+          "p",
+          "preview-meta",
+          `${formatBytes(candidate.sizeBytes)} · ${typeLabel(candidate.fileName)}`
+        ),
+        makeTextElement("code", "preview-destination", candidate.filePath),
+        makeTextElement("p", "preview-error", `Preview error: ${error.message}`)
+      );
+    }
+  });
+  card.append(previewButton, previewPanel);
+
+  const actions = document.createElement("div");
+  actions.className = "suggestion-actions";
+  const keepButton = makeTextElement("button", "button button-secondary", "Keep");
+  keepButton.type = "button";
+  const deleteButton = makeTextElement("button", "button button-danger", "Delete");
+  deleteButton.type = "button";
+  keepButton.addEventListener("click", async () => {
+    keepButton.disabled = true;
+    deleteButton.disabled = true;
+    deletionNotice.hidden = true;
+    try {
+      const result = await window.organizer.keepDeletionCandidate(candidate.id);
+      deletionCandidates = deletionCandidates.filter((item) => item.id !== candidate.id);
+      deletionReviewedCount += 1;
+      deletionNotice.textContent = `Kept ${result.fileName}. It remains where it is.`;
+      deletionNotice.hidden = false;
+      renderDeletionReview();
+    } catch (error) {
+      keepButton.disabled = false;
+      deleteButton.disabled = false;
+      deletionNotice.textContent = `We could not keep this review item: ${error.message}`;
+      deletionNotice.hidden = false;
+    }
+  });
+  deleteButton.addEventListener("click", async () => {
+    const confirmed = window.confirm(
+      `Send "${candidate.fileName}" to the Windows Recycle Bin? You can restore it from there.`
+    );
+    if (!confirmed) return;
+    keepButton.disabled = true;
+    deleteButton.disabled = true;
+    deletionNotice.hidden = true;
+    try {
+      const result = await window.organizer.deleteCandidate(candidate.id);
+      deletionCandidates = deletionCandidates.filter((item) => item.id !== candidate.id);
+      deletionReviewedCount += 1;
+      deletionNotice.textContent = `Sent ${result.fileName} to the Recycle Bin.`;
+      deletionNotice.hidden = false;
+      renderDeletionReview();
+    } catch (error) {
+      keepButton.disabled = false;
+      deleteButton.disabled = false;
+      deletionNotice.textContent = `We could not send this file to the Recycle Bin: ${error.message}`;
+      deletionNotice.hidden = false;
+    }
+  });
+  actions.append(keepButton, deleteButton);
+  card.append(actions);
+  return card;
+}
+
+function renderDeletionReview() {
+  const count = deletionCandidates.length;
+  deletionReviewButton.textContent = `Review deletion candidates (${count})`;
+  deletionProgress.textContent = count
+    ? `${count} ${count === 1 ? "candidate" : "candidates"} to review`
+    : "All caught up";
+  deletionEmpty.hidden = count > 0;
+  deletionEmpty.textContent = deletionReviewedCount
+    ? "No more candidates to review. Files you kept remain where they are."
+    : deletionReviewIssues.length
+      ? "No candidates are ready to review. Some files could not be checked; see the details below."
+      : "Your files are clean.";
+  const pageSize = Number(deletionPageSize.value);
+  const pageRange = renderPagination(count, pageSize, deletionPage, {
+    previous: deletionPagePrevious,
+    status: deletionPageStatus,
+    next: deletionPageNext
+  });
+  deletionPage = pageRange.page;
+  deletionPagination.hidden = count === 0;
+  deletionCandidateContainer.replaceChildren(
+    ...deletionCandidates
+      .slice(pageRange.start, pageRange.end)
+      .map(renderDeletionCandidate)
+  );
+  deletionIssues.replaceChildren();
+  for (const issue of deletionReviewIssues) {
+    const item = document.createElement("p");
+    item.append(
+      makeTextElement("strong", "", issue.fileName),
+      makeTextElement("span", "", ` — ${issue.reason}`)
+    );
+    if (issue.filePath) item.append(makeTextElement("code", "", issue.filePath));
+    deletionIssues.append(item);
+  }
+  deletionIssues.hidden = deletionReviewIssues.length === 0;
 }
 
 function showSuggestionPage(open) {
@@ -743,6 +964,8 @@ async function scanFolders({ resetSelection = true } = {}) {
   clearTimeout(searchTimer);
   searchRequest += 1;
   appNotice.hidden = true;
+  deletionNotice.textContent = "";
+  deletionNotice.hidden = true;
   if (resetSelection) {
     directoryRequest += 1;
     moveNotice = "";
@@ -761,19 +984,23 @@ async function scanFolders({ resetSelection = true } = {}) {
     folders = result.folders;
     purposeFolders = result.purposeFolders;
     moveSuggestions = result.suggestions;
+    deletionCandidates = result.deletionCandidates;
+    deletionReviewIssues = result.deletionIssues;
+    deletionReviewedCount = 0;
     skippedFiles = result.skippedFiles;
     alreadyOrganized = result.alreadyOrganized;
     renderFolders();
     renderPurposeFolders();
     renderAccessIssues();
     renderSuggestion();
+    renderDeletionReview();
     purposeFoldersButton.hidden = purposeFolders.length === 0;
     if (resetSelection) {
       if (currentPage === "search" && searchInput.value.trim()) {
         showPage("search");
         handleSearchInput();
-      } else if (currentPage === "suggestions") {
-        showPage("suggestions");
+      } else if (currentPage === "suggestions" || currentPage === "deletions") {
+        showPage(currentPage);
       } else {
         showPage(purposeFolders.length ? "purpose" : "general");
       }
@@ -784,7 +1011,7 @@ async function scanFolders({ resetSelection = true } = {}) {
     );
     setStatus(issueCount
       ? `${issueCount} locations need attention`
-      : `${moveSuggestions.length} move suggestions ready`);
+      : `${moveSuggestions.length} move suggestions · ${deletionCandidates.length} deletion candidates`);
     if (issueCount) {
       showMessage("Some folders need attention. Their details and paths are listed above.");
     } else {
@@ -797,6 +1024,9 @@ async function scanFolders({ resetSelection = true } = {}) {
     appNotice.textContent = `We could not scan your folders: ${error.message}`;
     appNotice.hidden = false;
     moveSuggestions = [];
+    deletionCandidates = [];
+    deletionReviewIssues = [];
+    deletionReviewedCount = 0;
     skippedFiles = [];
     alreadyOrganized = [];
     purposeFolders = [];
@@ -835,7 +1065,32 @@ rescanButton.addEventListener("click", scanFolders);
 purposeFoldersButton.addEventListener("click", () => showPage("purpose"));
 generalFoldersButton.addEventListener("click", () => showPage("general"));
 suggestionsButton.addEventListener("click", () => showSuggestionPage(true));
+deletionReviewButton.addEventListener("click", () => showPage("deletions"));
 addPurposeFolderButton.addEventListener("click", addExistingPurposeFolder);
+movePageSize.addEventListener("change", () => {
+  movePage = 0;
+  renderSuggestion();
+});
+movePagePrevious.addEventListener("click", () => {
+  movePage = Math.max(0, movePage - 1);
+  renderSuggestion();
+});
+movePageNext.addEventListener("click", () => {
+  movePage += 1;
+  renderSuggestion();
+});
+deletionPageSize.addEventListener("change", () => {
+  deletionPage = 0;
+  renderDeletionReview();
+});
+deletionPagePrevious.addEventListener("click", () => {
+  deletionPage = Math.max(0, deletionPage - 1);
+  renderDeletionReview();
+});
+deletionPageNext.addEventListener("click", () => {
+  deletionPage += 1;
+  renderDeletionReview();
+});
 searchInput.addEventListener("input", handleSearchInput);
 listViewButton.addEventListener("click", () => setLayout("list"));
 gridViewButton.addEventListener("click", () => setLayout("grid"));

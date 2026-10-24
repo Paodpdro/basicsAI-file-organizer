@@ -43,14 +43,14 @@ Build mode: learn
   Learner check: Register an existing purpose folder, open it and a subfolder, find a test file with search, switch layouts, preview a supported file, and use Open on a file whose type is unsupported for preview. Confirm an out-of-root folder cannot be registered.
   Commit: `Add file search and preview controls`
 
-- [ ] **4. Review cautious deletion candidates safely**
-  Becomes usable: A scan shows one deletion candidate at a time with a reason and path. Exact-content duplicates and files modified more than one year ago are labeled; “possibly unused” appears only if a reliable last-opened date exists. Confirmed Delete sends the file to Recycle Bin; Keep leaves it in place.
+- [x] **4. Review cautious deletion candidates safely**
+  Becomes usable: A scan shows deletion candidates in a paged grid with reasons, paths, and safe previews. Paul can show 5, 10, or 50 candidates per page. Exact-content duplicates and files modified more than one year ago are labeled; “possibly unused” appears only if a reliable last-opened date exists. Confirmed Delete sends the file to Recycle Bin; Keep leaves it in place.
   Why now: Adds the highest-consequence operation after safe scanning, review, and confirmation patterns have been exercised. It completes the cleanup part of the demo with a recoverable delete.
   PRD ref: `prd.md > The Core Journey` (step 6), `Deletion review`, and `States and Boundaries`
   Spec ref: `spec.md > Local File Analyzer and Suggestion Builder`, `File Operation Handler`, `Data Model`, and `Important Failure Modes`
-  Build: Add content-hash duplicate detection, the one-year last-modified rule, cautious optional last-opened rule, one-at-a-time Keep/Delete review, confirmation, Recycle Bin operation, and friendly empty state.
-  Verify (mechanical): Run `node --test`; temporary fixtures prove exact-content duplicates match while name-only matches do not, the one-year cutoff is applied, Keep changes nothing, and Delete invokes a safely testable trash operation. On Windows, confirm a test file moves to Recycle Bin only after confirmation and the no-candidates state is shown.
-  Learner check: Review a disposable duplicate or old test file, choose Keep first, then test Delete on a separate disposable file and confirm it is recoverable from Recycle Bin. Tell me if the tags and confirmation make the decision understandable.
+  Build: Add content-hash duplicate detection, the one-year last-modified rule, cautious optional last-opened rule, a 5/10/50-card paged deletion grid with safe per-file previews, Keep/Delete review, confirmation, Recycle Bin operation, and friendly empty state. Add the same 5/10/50 paging control to move suggestions.
+  Verify (mechanical): Run `node --test`; temporary fixtures prove exact-content duplicates match while name-only matches do not, the one-year cutoff is applied, Keep changes nothing, and Delete invokes a safely testable trash operation. In the Windows UI, verify both review grids can show 5, 10, and 50 cards per page; deletion previews use bounded safe previews; a confirmed test deletion reaches Recycle Bin; and the no-candidates state is shown.
+  Learner check: Set each review page to 5, 10, and 50 items, preview a disposable duplicate or old test file, choose Keep first, then test Delete on a separate disposable file and confirm it is recoverable from Recycle Bin. Tell me if the previews, tags, page controls, and confirmation make the decisions understandable.
   Commit: `Add confirmed deletion review`
 
 ## Hands-on Checkpoints
@@ -84,3 +84,5 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Latest visual feedback — used WCAG-AA-contrasting blues for white header text and yellow-button text, increased header lettering spacing, and added low-opacity decorative SVGs behind the content.
 - Decoration refinement — the learner could not see the colored background icons, so changed them to neutral gray and increased their opacity slightly while keeping them behind content.
 - Slice 3 learner check — confirmed the browsing, search, preview, and open work was good and asked to proceed to Slice 4.
+- Slice 4 review layout revision — Paul requested safe previews on deletion candidates and 5/10/50-card page sizes for both deletion review and move suggestions. The deletion page changes from one-at-a-time cards to a paged grid; each file still requires its own Keep or confirmed Delete decision.
+- Slice 4 Windows learner check — confirmed scanning and both review pages work after the duplicate timestamp fix; preview and the 5/10/50 controls work. Paul tested Delete on an actual old file and confirmed it was recoverable from the Windows Recycle Bin.

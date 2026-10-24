@@ -64,6 +64,7 @@
             <button class="button button-secondary" id="purpose-folders-button" type="button" hidden>Purpose folders</button>
             <button class="button button-secondary" id="general-folders-button" type="button">General folders</button>
             <button class="button button-secondary" id="suggestions-button" type="button">Review move suggestions</button>
+            <button class="button button-secondary" id="deletion-review-button" type="button">Review deletion candidates (0)</button>
             <button class="button button-secondary" id="add-purpose-folder-button" type="button">Add existing folder</button>
           </nav>
           <button class="button button-primary" id="rescan-button" type="button">Rescan folders</button>
@@ -138,7 +139,7 @@
         <section id="suggestions-section" aria-labelledby="suggestions-heading" hidden>
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Review one move at a time</p>
+              <p class="eyebrow">Review each move separately</p>
               <h2 id="suggestions-heading">Move suggestions</h2>
               <p id="suggestions-intro">Review each file’s current path, destination, and preview before approving its move.</p>
             </div>
@@ -154,7 +155,44 @@
             <ul class="skipped-files-list" id="already-organized-list"></ul>
           </details>
           <p class="empty-message" id="suggestion-empty" hidden></p>
+          <div class="review-pagination" id="move-pagination">
+            <label for="move-page-size">Cards per page</label>
+            <select id="move-page-size">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="50">50</option>
+            </select>
+            <button class="button button-secondary" id="move-page-previous" type="button">Previous</button>
+            <span id="move-page-status" role="status"></span>
+            <button class="button button-secondary" id="move-page-next" type="button">Next</button>
+          </div>
           <div class="suggestion-grid" id="suggestion-grid"></div>
+        </section>
+
+        <section id="deletion-section" aria-labelledby="deletion-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Review each file separately</p>
+              <h2 id="deletion-heading">Deletion review</h2>
+              <p>These are only possibilities. Keep anything you still need.</p>
+            </div>
+            <span class="status-pill" id="deletion-progress" role="status"></span>
+          </div>
+          <p class="move-notice" id="deletion-notice" role="status" hidden></p>
+          <div class="deletion-issues" id="deletion-issues" role="status" hidden></div>
+          <p class="empty-message" id="deletion-empty" hidden></p>
+          <div class="review-pagination" id="deletion-pagination">
+            <label for="deletion-page-size">Cards per page</label>
+            <select id="deletion-page-size">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="50">50</option>
+            </select>
+            <button class="button button-secondary" id="deletion-page-previous" type="button">Previous</button>
+            <span id="deletion-page-status" role="status"></span>
+            <button class="button button-secondary" id="deletion-page-next" type="button">Next</button>
+          </div>
+          <div class="deletion-card-grid" id="deletion-candidate"></div>
         </section>
       </main>
       <footer><p>Your files stay on this computer.</p></footer>

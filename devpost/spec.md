@@ -63,7 +63,7 @@ Exposes a small, explicit set of actions to the screen—start/rescan, list fold
 PRD ref: `prd.md > Browsing and searching`, `Scanning and organization suggestions`, `Deletion review`, and `Access problems`.
 
 ### Renderer Interface
-Displays purpose-folder cards, general-folder cards, navigable folder contents, search results, grid/list controls, local file previews, scan progress, move suggestions, deletion review, confirmation dialogs, and friendly empty/error messages. It contains no direct file-system access.
+Displays purpose-folder cards, general-folder cards, navigable folder contents, search results, grid/list controls, local file previews, scan progress, move suggestions, paged 5/10/50-card review grids, deletion previews, confirmation dialogs, and friendly empty/error messages. It contains no direct file-system access.
 PRD ref: `prd.md > Screens and Layout`, `Look and Feel`, and `States and Boundaries`.
 
 ### Standard-Folder Scanner
@@ -80,8 +80,10 @@ For remaining files, use simple, explainable keyword and file-type rules that re
 ### Safe Single-File Preview
 The renderer requests a preview for one file's individual move card. The main process revalidates its path under the approved roots. Return a bounded thumbnail for PNG/JPG/GIF/WebP, or at most the first 50 KB of TXT/MD/JSON/CSV/JS as plain text. Other files, including PDF, show “Preview unavailable” with file name, byte size, type, current path, and destination. Never interpret text as HTML or send original image bytes to the renderer; return only the bounded thumbnail. If reading or decoding fails, return a visible error with file metadata. Preview has no move action; only the card's Approve action can move a file.
 
-For deletion tags, **duplicate** means matching SHA-256 content hashes, not merely matching names. **Old** means last modified more than one year ago; use a last-opened date only if Windows supplies a trustworthy value, otherwise do not infer it. **Possibly unused** remains a cautious rule-based hint, never proof that a file is safe to remove. Rules are local and transparent; they do not provide AI-level understanding.
+For deletion tags, **duplicate** means matching SHA-256 content hashes, not merely matching names. **Old** means last modified more than one year ago; use a last-opened date only if Windows supplies a trustworthy value, otherwise do not infer it. The current scanner has no reliable last-opened date, so it emits only duplicate and old tags. **Possibly unused** remains a cautious rule-based hint, never proof that a file is safe to remove. Rules are local and transparent; they do not provide AI-level understanding.
 PRD ref: `prd.md > Scanning and organization suggestions` and `Deletion review`.
+
+The deletion-review grid uses the same bounded local preview for each candidate. Preview remains informational; Keep and confirmed Delete are separate actions. Both move suggestions and deletion candidates are paged with 5, 10, or 50 cards per page.
 
 ### Purpose-Folder Index
 Stores the user's names and the real absolute paths of purpose folders, which may be nested under different general folders. The index is a navigation aid, not a virtual folder: files stay at the corresponding real paths. Paul can register an existing folder anywhere under one of the six roots with a native folder picker. Purpose-folder cards open their indexed paths, then allow normal browsing into child folders. Accepting a suggested move can create a missing purpose folder on disk only after confirmation.
@@ -109,7 +111,7 @@ PRD ref: `prd.md > States and Boundaries` and `Product Decisions`.
 - **Preview result (memory):** safe type, file name, byte size, current path, proposed destination, and either a bounded thumbnail or at most 50 KB of plain-text content. No preview action changes the file.
 - **Deletion suggestion (memory):** `filePath`, reason tags, hash only when needed for duplicate checking, and review status. Confirmed deletion sends the file to Recycle Bin.
 - **Purpose-folder index (local JSON):** entries of `{ name, path, parentType }`. Update after the user creates or accepts a folder; validate paths at load and use. If a path no longer exists, show it as unavailable and let the user remove or repair the entry.
-- **UI state (memory):** current grid/list choice and selected page for the open session. No account or sync.
+- **UI state (memory):** current grid/list choice, selected page, and chosen 5/10/50 card count for both review grids during the open session. No account or sync.
 - **Persistence:** Save the purpose-folder index under Electron `app.getPath("userData")`. Keep scan records, extracted text, search results, and suggestion queues in memory only. Closing the app discards pending suggestions; a new launch rescans.
 
 ## File Structure
@@ -124,7 +126,8 @@ project/
 │   ├── main/
 │   │   ├── main.js              # Create window; register IPC actions
 │   │   ├── scanner.js           # Resolve roots and list safe file records
-│   │   ├── analyzer.js          # Extract local text and build suggestions
+│   │   ├── analyzer.js          # Extract local text and build move suggestions
+│   │   ├── deletion-review.js   # Find cautious candidates and handle review decisions
 │   │   ├── destination-names.js # Collision-safe filenames
 │   │   ├── file-operations.js   # Validate and perform confirmed moves
 │   │   ├── file-search.js       # Search current scan metadata
@@ -139,6 +142,7 @@ project/
 │       └── date-utils.js       # Safe display formatting for modified dates
 ├── test/
 │   ├── organization.test.js    # Analysis, previews, moves, and purpose folders
+│   ├── deletion-review.test.js # Duplicate, age, keep, and confirmed-delete behavior
 │   └── scanner.test.js         # Safe scanning, listing, and path checks
 ├── package.json
 ├── package-lock.json

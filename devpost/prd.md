@@ -18,15 +18,15 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 3. Paul opens a purpose-based folder to browse its files, or switches to the general folders, organization suggestions, deletion review, or Windows extras.
 4. He can switch between grid and list layouts, search files, and choose Preview or Open for an individual file.
 5. In organization suggestions, he reviews individual move cards for eligible loose files sitting directly in one of the six standard folders. Files already inside subfolders are left alone and summarized under “Already organized.” Each move card shows one file, its current path, proposed destination, and a safe preview before approval. He clicks Approve on a card to authorize that one move; nothing moves before that click. Skip for now dismisses that suggestion for the current review without adding it to the skipped-files disclosure. A missing destination folder is created only after approval, and the result is visible in File Explorer and the app.
-6. In deletion review, he sees one candidate at a time with a reason tag and current location. He can keep or delete it, confirming the choice before it takes effect.
+6. In deletion review, he sees a paged grid of candidates with a reason tag, current location, and a safe preview. He can choose 5, 10, or 50 candidates per page, then keep or delete each individually; Delete requires confirmation before it takes effect.
 7. He can rescan at any time to refresh both organization suggestions and deletion candidates.
 
 ## Screens and Layout
 - **Purpose-based folders:** The home page when at least one such folder exists. It is an index to real folders nested under the most useful general folder—for example, Research under Documents, Minecraft under Desktop, or Qatar Images under Pictures. Paul names folders; the app may suggest useful names and locations.
 - **General folders:** A grid of the familiar Documents, Downloads, Desktop, Pictures, Music, and Videos folders. These folders remain present and are not replaced.
 - **Folder contents:** Opens when Paul chooses a purpose-based or general folder. Offers grid and list layouts, a way to switch between them, and file actions for Preview and Open.
-- **Organization suggestions:** Shows a grid of individual move cards, one file per card. Each card shows its current path, proposed destination, safe preview, and Approve/Skip for now actions. There are no grouped destination cards or checkboxes.
-- **Deletion review:** Shows one possible deletion at a time, its reason tag, and current location, with Keep and Delete actions.
+- **Organization suggestions:** Shows a paged grid of individual move cards, one file per card, with 5, 10, or 50 cards per page. Each card shows its current path, proposed destination, safe preview, and Approve/Skip for now actions. There are no grouped destination cards or checkboxes.
+- **Deletion review:** Shows a paged grid of possible deletion candidates with reason tags, current locations, and safe per-file previews. Paul can choose to show 5, 10, or 50 cards per page, and each card has Keep and Delete actions.
 - **Windows extras:** A separate page for Windows-related files found in accessible personal folders, such as downloaded installers and `.exe` files; not mixed with personal files or sourced from system/application folders.
 - Navigation makes these areas accessible as distinct tabs or pages. Exact labels can be settled in the technical spec.
 
@@ -56,6 +56,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 - Suggest moves only for eligible loose files directly inside Documents, Downloads, Desktop, Pictures, Music, or Videos. Do not extract contents from files inside existing subfolders or suggest moving them; summarize each non-empty top-level subfolder and its file count under “Already organized.”
 - Show a collapsed “Skipped files (N)” disclosure only for files the app cannot safely handle, such as unreadable or locked files. Show the reason for each and keep the list hidden until expanded. A file with no matching suggestion rule is not reported as a safety skip.
 - Show move suggestions as a grid of individual cards, one card per file, with its suggested purpose folder, reason, current path, and proposed destination. Do not group files by destination or show group checkboxes.
+- Let Paul select 5, 10, or 50 move suggestions per page; each move remains independently approved or skipped.
 - If a standard folder's own top-level contents indicate a project—such as `.git`, `package.json`, an `.ino` sketch, a `.sln` file, or both a `.py` file and `requirements.txt`—show its direct files in “Already organized” instead of suggesting moves. Files within subfolders are always treated as already organized, without reading their contents or changing their folder structure.
 - During review, show a preview panel for the selected move card with the file name, size, type, current path, and proposed destination. Show an image thumbnail for PNG/JPG/GIF/WebP; show up to the first 50 KB of TXT/MD/JSON/CSV/JS as plain text; show “Preview unavailable” with the file's name, size, and type for other formats. If a preview read or decode fails, show a visible error rather than an empty panel. Preview is informational only.
 - Resolve an existing destination-name collision by appending the first available number before the extension, such as `report (2).pdf`. Show that exact destination in the preview before approval. Never overwrite a file; if the proposed name becomes unavailable before approval completes, refresh the proposed name and require approval for the updated destination.
@@ -69,7 +70,8 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 
 ### Deletion review
 Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Boundary`.
-- Show possible deletion candidates one at a time, each with an understandable reason tag, such as **duplicate**, **old**, or **possibly unused**, and its current location.
+- Show possible deletion candidates in a paged grid, each with an understandable reason tag, such as **duplicate**, **old**, or **possibly unused**, its current location, and a Preview action. Paul can choose 5, 10, or 50 candidates per page.
+- Use the safe local preview behavior from browsing: supported images show a thumbnail, supported text shows at most the first 50 KB as plain text, selectable PDF text is extracted locally within the existing limits, and other unsupported types show “Preview unavailable.” No preview changes the file.
 - Treat identical file contents as duplicates, not matching names alone. “Old” means last modified more than one year ago. Show “possibly unused” only when a reliable last-opened date older than one year is available.
 - Present candidates as suggestions, not certainty that a file is useless. Paul decides whether to keep or delete each one.
 - Ask for confirmation before applying the choice. Keep leaves the file in place; confirmed Delete removes it.
@@ -89,7 +91,7 @@ Source: `scope.md > The POC Boundary`.
 - **Folder inaccessible:** Identify the folder and give a copyable path for File Explorer.
 - **Move suggestion approved:** Show the selected file's preview and proposed destination first. Move only that file after Paul clicks Approve; create the destination folder if needed, then reflect the change in the app and File Explorer.
 - **Move suggestion skipped:** Skip only that file when Paul clicks Skip for now. It remains in place and may appear again after a later scan.
-- **Deletion candidate:** No file is deleted until Paul confirms Delete.
+- **Deletion candidate:** Show multiple cards per page, but no file is deleted until Paul confirms Delete on that candidate.
 - **Scan boundary:** The first version scans the six standard personal folders and their subfolders. Windows, Program Files, and other system/application folders are excluded; custom scan locations are deferred.
 
 ## Product Decisions

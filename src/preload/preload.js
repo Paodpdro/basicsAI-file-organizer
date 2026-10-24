@@ -15,5 +15,7 @@ contextBridge.exposeInMainWorld("organizer", {
     ipcRenderer.invoke("suggestions:preview", suggestionId, destinationRootId, folderName),
   approveMoveSuggestion: (suggestionId, destinationRootId, folderName, expectedPath) =>
     ipcRenderer.invoke("suggestions:approve", suggestionId, destinationRootId, folderName, expectedPath),
+  keepDeletionCandidate: (candidateId) => ipcRenderer.invoke("deletions:keep", candidateId),
+  deleteCandidate: (candidateId) => ipcRenderer.invoke("deletions:delete", candidateId),
   copyFolderPath: (rootId, targetPath) => ipcRenderer.invoke("folders:copy-path", rootId, targetPath)
 });

@@ -2,6 +2,7 @@ const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = r
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { buildMoveSuggestions, fileTypeLabel } = require("./analyzer");
+const { buildDeletionCandidates, createDeletionReviewQueue } = require("./deletion-review");
 const { createMoveSuggestionQueue } = require("./file-operations");
 const { searchFileRecords } = require("./file-search");
 const { createFolderRoots, isInsideRoot, listDirectory, resolveFilePath, scanFolders } = require("./scanner");
@@ -13,6 +14,7 @@ let purposeIndexPath;
 let mainWindow;
 let scannedFiles = [];
 let suggestionQueue = createMoveSuggestionQueue(folderRoots, []);
+let deletionReviewQueue = createDeletionReviewQueue(folderRoots, [], (filePath) => shell.trashItem(filePath));
 
 function createImageThumbnail(filePath) {
   const image = nativeImage.createFromPath(filePath);
@@ -58,6 +60,7 @@ app.whenReady().then(() => {
       typeLabel: fileTypeLabel(file.name)
     })));
     const { suggestions, skippedFiles, alreadyOrganized } = await buildMoveSuggestions(folders, folderRoots);
+    const deletionReview = await buildDeletionCandidates(folderRoots, scannedFiles);
     const purposeFolders = (await readPurposeFolders(purposeIndexPath, folderRoots)).map((folder) => ({
       ...folder,
       rootId: folder.parentType,
@@ -68,11 +71,18 @@ app.whenReady().then(() => {
     suggestionQueue = createMoveSuggestionQueue(folderRoots, suggestions, {
       createThumbnail: createImageThumbnail
     });
+    deletionReviewQueue = createDeletionReviewQueue(
+      folderRoots,
+      deletionReview.candidates,
+      (filePath) => shell.trashItem(filePath)
+    );
     return {
       folders: folders.map(({ files, ...folder }) => folder),
       suggestions,
       skippedFiles,
       alreadyOrganized,
+      deletionCandidates: deletionReview.candidates,
+      deletionIssues: deletionReview.issues,
       purposeFolders
     };
   });
@@ -140,6 +150,8 @@ app.whenReady().then(() => {
     }
     return result;
   });
+  ipcMain.handle("deletions:keep", (_event, candidateId) => deletionReviewQueue.keep(candidateId));
+  ipcMain.handle("deletions:delete", (_event, candidateId) => deletionReviewQueue.delete(candidateId));
   ipcMain.handle("folders:copy-path", async (_event, rootId, targetPath) => {
     const root = folderRoots.find((folder) => folder.id === rootId);
     if (!root) throw new Error("That folder is not available.");
