@@ -1,50 +1,52 @@
 ---
 doc: scope
-status: draft
+status: approved
 ---
 <!-- `status` is the progress state every skill reads. Write `draft` when you first save this file,
      and change it to `approved` when the learner clearly approves the displayed plan ("looks good" counts).
      Do not request a second sign-off. Never skip the draft save —
      an unsaved draft dies with the conversation. -->
 
-# File Organizer
+# Personal File Organizer
 
-A personal tool that suggests where files should live (including use-case folders), applies only what you accept, and helps you find files without walking every folder.
+A personal file organizer that keeps familiar Windows folders easy to browse, sorts files into useful destinations, and separates personal-purpose folders from Windows extras.
 
 ## The Unique Kernel
-It does not blindly dump files into Documents / Music / Pictures. It proposes groupings that match a use case (for example, one “English communication research” folder) and where that folder should live, then moves files only after you choose.
+It keeps the familiar folders—Documents, Downloads, Desktop, Pictures, Music, and Videos—as the main way to browse, while also organizing files into purpose-based folders Paul uses, such as coding or research for a specific subject. For example, student photos, ID, and grades found in Downloads could be suggested for a student-records folder under Documents. The organizer proposes where files belong and moves them only after Paul accepts.
 
 ## Who It's For
-People with disorganized files: students, older people / older generations, and anyone in the same situation — years of stuff piled in Downloads, hunting through folders by hand. The proof of concept is still built around Paul’s machine (third-year software engineering student, Windows + WSL, school/research/media dump), so we can demo a real mess without designing for every kind of user at once.
+Paul, whose personal files are disorganized and especially crowded in Downloads. New downloads accumulate there, so he has to manually move files to the familiar folders or subject folders where he wants them.
 
 ## The Core Loop
-Open the tool, see familiar folder cards (Documents, Desktop, Downloads, and so on) plus a **Windows extras** card for installers, `.exe` files, and similar junk, optionally search, hit Organize, review suggested placements and groupings, accept or reject, and watch accepted moves happen. The tool can also ask whether unused or useless-looking files should be deleted. Windows extras stay out of the “my files” cards — they live on their own card.
+Open the organizer to a grid of familiar folders—Documents, Downloads, Desktop, Pictures, Music, and Videos. Switch to a page of purpose-based folders, such as coding or research for a particular subject, or a separate page for Windows extras such as installers and `.exe` files. Search when looking for something specific. Ask it to scan personal files, review suggested destinations and possible deletions, and accept or reject changes before files are moved or deleted.
 
 ## Inspiration & Identity
-Easy on the eyes and user-friendly for people who are not file-system experts — including older people and students. Square cards for the usual folders, not a dense file-manager tree. Calm and personal — not a system-admin console. (Teleparty is personal inspiration for simple, friendly UI, not a feature of this product.)
+Easy on the eyes and user-friendly—not a dense, technical file-manager or system-admin console. The familiar Windows folders are shown as grid cards; purpose-based folders and Windows extras each have their own page.
 
 ## Why This Matters to the Learner
-He already knows DSA and OOP but gets stuck actually building. This project is a real mess on his own machine: high-school-era files, research, and a Downloads folder that never got sorted. He wants something that organizes files properly and makes them easier to locate.
+Paul wants to make his own disorganized files easier to organize and find, and to get better at turning his coding knowledge into a working project.
 
 ## What "Working" Looks Like
-In a short demo: open the app, look at folder cards including a Windows extras card, search and find a file, press Organize, see use-case-aware suggestions (not just file-type buckets), accept some, and those files actually move. Also get asked before deleting unused or junk-looking files.
+In a short demo, Paul sees grid cards for Documents, Downloads, Desktop, Pictures, Music, and Videos, plus pages for purpose-based folders and Windows extras. The organizer finds files in Downloads, suggests moving student photos, an ID, and grades into a student-records folder under Documents, and suggests useful groups such as Webtech 2 or research for a specific subject. Paul can search for a file, review suggestions, and accept a move. The organizer asks before deleting anything.
 
 ## The POC Boundary
-In now, tightly:
-- Organize that **suggests** placements and use-case folders, then **does** the accepted ones
-- Ask before deleting unused or somewhat useless files
-- Separate Windows extra files from “my” files, shown as their own **Windows extras** card (not mixed into Documents / Downloads)
-- A **search** button to find a file without walking folders (within the files this version can see)
-
-The first demo can target a messy area Paul actually cares about (especially Downloads), not a perfect whole-disk product.
+- Show Documents, Downloads, Desktop, Pictures, Music, and Videos as the familiar main grid, without removing or replacing those folders.
+- Provide a separate page for purpose-based folders such as coding, Webtech 2, or research for a specific subject.
+- Provide a separate page for Windows-related extras such as installers and `.exe` files.
+- Scan personal files in the folders this version can safely access, including Downloads and other personal locations; do not organize Windows, Program Files, or other system/application folders.
+- Search within the personal files this version can see.
+- Suggest useful folders and destinations within the familiar or purpose-based organization, then move files only after Paul accepts.
+- Flag possible deletions for review and ask before deleting; never delete automatically.
+- Keep the experience simple and approachable.
 
 ## Later
-- Reach Windows files and WSL Ubuntu files as one place: search or copy between them without hopping through folders
-- Richer “authoritative files” library and more folder cards / tabs
-- Smarter junk detection and more use-case templates
+- Reach Windows files and WSL Ubuntu files as one place, including searching or copying between them.
+- More sophisticated cleanup and categorization beyond the proof of concept.
+- A richer library of folder types, templates, and browsing views.
 
 ## Explicitly Cut
-- **Blind auto-sort by file type with no approval** — the kernel is suggest-then-accept, including use-case folders
-- **Full Windows ↔ WSL bridge in this proof of concept** — Paul wants it, and it is later, not now (search in this version is not that bridge)
-- **A complete file manager** (every tab, every cleanup heuristic, whole-device polish) — too big for 2–4 hours
-- **A Teleparty-style watch-party extension** — inspiration only
+- **Windows, Program Files, and other system/application folders** — changing these files could break the computer; the organizer preserves the familiar personal folders and focuses on personal files.
+- **Blind auto-sorting or automatic deletion** — Paul needs to review and accept suggested changes.
+- **A full Windows ↔ WSL bridge** — wanted, but not needed to prove the first version.
+- **A complete, polished file manager** — too broad for a 2–4 hour proof of concept.
+- **A Teleparty-style watch-party extension** — inspiration only, not part of this project.
