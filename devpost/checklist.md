@@ -33,7 +33,7 @@ Build mode: learn
   Learner check: Put disposable copies of a text/PDF file directly in a scanned folder and related files in existing subfolders such as “1.Bun” or “QU.” Confirm only the loose files receive move cards and each subfolder appears as “Already organized.” Preview and skip one loose file, confirming it remains in place; rescan and approve a different disposable file, then confirm its destination (including any suffix) and purpose folder in File Explorer.
   Commit: `Add reviewed purpose-based file moves`
 
-- [ ] **3. Browse, search, preview, and open files**
+- [x] **3. Browse, search, preview, and open files**
   Becomes usable: The purpose-based page indexes real folders wherever they live; folder contents can be searched and shown in grid or list view. Supported images, text, and PDFs can be previewed locally; other files offer Open through Windows.
   Why now: Builds on the stable scan and real-folder index, then completes the everyday browsing journey without adding a separate database or virtual file system.
   PRD ref: `prd.md > The Core Journey` (steps 2–4), `Screens and Layout`, `Browsing and searching`, and `States and Boundaries`
@@ -83,3 +83,4 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Latest Slice 1 feedback — made folder cards square with rounded corners, bold icons, and a thick bottom edge; gave Rescan a distinct blue with hover/focus states; added readable modified dates and an “Unknown” fallback.
 - Latest visual feedback — used WCAG-AA-contrasting blues for white header text and yellow-button text, increased header lettering spacing, and added low-opacity decorative SVGs behind the content.
 - Decoration refinement — the learner could not see the colored background icons, so changed them to neutral gray and increased their opacity slightly while keeping them behind content.
+- Slice 3 learner check — confirmed the browsing, search, preview, and open work was good and asked to proceed to Slice 4.
