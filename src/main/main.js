@@ -1,13 +1,17 @@
-const { app, BrowserWindow, clipboard, ipcMain, nativeImage } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { createFolderRoots, isInsideRoot, listDirectory, scanFolders } = require("./scanner");
-const { buildMoveSuggestions } = require("./analyzer");
+const { buildMoveSuggestions, fileTypeLabel } = require("./analyzer");
 const { createMoveSuggestionQueue } = require("./file-operations");
+const { searchFileRecords } = require("./file-search");
+const { createFolderRoots, isInsideRoot, listDirectory, resolveFilePath, scanFolders } = require("./scanner");
 const { addPurposeFolder, readPurposeFolders } = require("./purpose-folder-store");
+const { buildBrowseFilePreview } = require("./preview");
 
 let folderRoots = [];
 let purposeIndexPath;
+let mainWindow;
+let scannedFiles = [];
 let suggestionQueue = createMoveSuggestionQueue(folderRoots, []);
 
 function createImageThumbnail(filePath) {
@@ -32,6 +36,7 @@ function createWindow() {
   });
 
   window.loadFile(path.join(__dirname, "../renderer/index.html"));
+  return window;
 }
 
 app.whenReady().then(() => {
@@ -39,9 +44,27 @@ app.whenReady().then(() => {
   purposeIndexPath = path.join(app.getPath("userData"), "purpose-folders.json");
 
   ipcMain.handle("folders:scan", async () => {
+    scannedFiles = [];
     const folders = await scanFolders(folderRoots);
+    const canonicalRoots = new Map();
+    for (const folder of folders) {
+      if (folder.available) canonicalRoots.set(folder.id, await fs.realpath(folder.path));
+    }
+    scannedFiles = folders.flatMap((folder) => (folder.files ?? []).map((file) => ({
+      ...file,
+      kind: "file",
+      relativePath: path.relative(canonicalRoots.get(folder.id), file.path),
+      rootLabel: folder.label,
+      typeLabel: fileTypeLabel(file.name)
+    })));
     const { suggestions, skippedFiles, alreadyOrganized } = await buildMoveSuggestions(folders, folderRoots);
-    const purposeFolders = await readPurposeFolders(purposeIndexPath, folderRoots);
+    const purposeFolders = (await readPurposeFolders(purposeIndexPath, folderRoots)).map((folder) => ({
+      ...folder,
+      rootId: folder.parentType,
+      relativeDirectory: canonicalRoots.has(folder.parentType)
+        ? path.relative(canonicalRoots.get(folder.parentType), folder.path)
+        : ""
+    }));
     suggestionQueue = createMoveSuggestionQueue(folderRoots, suggestions, {
       createThumbnail: createImageThumbnail
     });
@@ -56,6 +79,43 @@ app.whenReady().then(() => {
   ipcMain.handle("folders:list", (_event, rootId, relativeDirectory) =>
     listDirectory(folderRoots, rootId, relativeDirectory)
   );
+  ipcMain.handle("files:search", (_event, query) => searchFileRecords(scannedFiles, query));
+  ipcMain.handle("files:preview", (_event, rootId, relativePath) =>
+    buildBrowseFilePreview(folderRoots, rootId, relativePath, createImageThumbnail)
+  );
+  ipcMain.handle("files:open", async (_event, rootId, relativePath) => {
+    const file = await resolveFilePath(folderRoots, rootId, relativePath);
+    const openError = await shell.openPath(file.path);
+    if (openError) throw new Error(openError);
+    return { opened: true };
+  });
+  ipcMain.handle("purpose-folders:add-existing", async () => {
+    const selection = await dialog.showOpenDialog(mainWindow, {
+      title: "Choose a purpose folder",
+      buttonLabel: "Add folder",
+      properties: ["openDirectory"]
+    });
+    if (selection.canceled) return { cancelled: true };
+    if (!selection.filePaths[0]) throw new Error("No folder was selected.");
+    const selectedPath = await fs.realpath(selection.filePaths[0]);
+    for (const root of folderRoots) {
+      let canonicalRoot;
+      try {
+        canonicalRoot = await fs.realpath(root.path);
+      } catch (error) {
+        if (["ENOENT", "EACCES", "EPERM"].includes(error.code)) continue;
+        throw error;
+      }
+      if (!isInsideRoot(canonicalRoot, selectedPath)) continue;
+      const entry = await addPurposeFolder(purposeIndexPath, folderRoots, {
+        name: path.basename(selectedPath),
+        path: selectedPath,
+        parentType: root.id
+      });
+      return { cancelled: false, entry };
+    }
+    throw new Error("Choose a folder inside Documents, Downloads, Desktop, Pictures, Music, or Videos.");
+  });
   ipcMain.handle("suggestions:skip", (_event, suggestionId) => suggestionQueue.skip(suggestionId));
   ipcMain.handle("suggestions:preview", (_event, suggestionId, destinationRootId, folderName) =>
     suggestionQueue.preview(suggestionId, destinationRootId, folderName)
@@ -91,9 +151,9 @@ app.whenReady().then(() => {
     clipboard.writeText(resolvedTarget);
   });
 
-  createWindow();
+  mainWindow = createWindow();
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
   });
 });
 

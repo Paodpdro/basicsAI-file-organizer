@@ -4,9 +4,10 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const { buildMoveSuggestions } = require("../src/main/analyzer");
+const { searchFileRecords } = require("../src/main/file-search");
 const { createMoveSuggestionQueue } = require("../src/main/file-operations");
 const { addPurposeFolder, readPurposeFolders } = require("../src/main/purpose-folder-store");
-const { MAX_TEXT_PREVIEW_BYTES } = require("../src/main/preview");
+const { buildBrowseFilePreview, MAX_TEXT_PREVIEW_BYTES } = require("../src/main/preview");
 const { scanFolders } = require("../src/main/scanner");
 
 const FOLDER_NAMES = ["Documents", "Downloads", "Desktop", "Pictures", "Music", "Videos"];
@@ -19,7 +20,10 @@ async function createFixture(t) {
     label,
     path: path.join(temporaryRoot, label)
   }));
-  await Promise.all(roots.map((root) => fs.mkdir(root.path, { recursive: true })));
+  await Promise.all(roots.map(async (root) => {
+    await fs.mkdir(root.path, { recursive: true });
+    root.path = await fs.realpath(root.path);
+  }));
   return roots;
 }
 
@@ -329,6 +333,58 @@ test("supports all specified text preview extensions", async (t) => {
   }
 });
 
+test("previews browsing files safely, including local PDF text and unsupported-file fallback", async (t) => {
+  const roots = await createFixture(t);
+  const downloads = roots.find((root) => root.id === "downloads");
+  const textPath = path.join(downloads.path, "private-notes.txt");
+  const imagePath = path.join(downloads.path, "thumbnail.png");
+  const pdfPath = path.join(downloads.path, "research-paper.pdf");
+  const otherPath = path.join(downloads.path, "archive.zip");
+  await fs.writeFile(textPath, "<script>not markup</script>");
+  await fs.writeFile(imagePath, "image bytes");
+  await fs.writeFile(pdfPath, createPdf("A research paper preview."));
+  await fs.writeFile(otherPath, "zip bytes");
+  const thumbnail = async () => "data:image/png;base64,dGh1bWI=";
+
+  const textPreview = await buildBrowseFilePreview(roots, "downloads", "private-notes.txt", thumbnail);
+  assert.equal(textPreview.kind, "text");
+  assert.equal(textPreview.text, "<script>not markup</script>");
+  const imagePreview = await buildBrowseFilePreview(roots, "downloads", "thumbnail.png", thumbnail);
+  assert.equal(imagePreview.kind, "image");
+  assert.equal(imagePreview.dataUrl, "data:image/png;base64,dGh1bWI=");
+  const pdfPreview = await buildBrowseFilePreview(roots, "downloads", "research-paper.pdf", thumbnail);
+  assert.equal(pdfPreview.kind, "text");
+  assert.match(pdfPreview.text, /research paper preview/i);
+  const unsupportedPreview = await buildBrowseFilePreview(roots, "downloads", "archive.zip", thumbnail);
+  assert.equal(unsupportedPreview.kind, "unavailable");
+  assert.equal(unsupportedPreview.fileName, "archive.zip");
+  assert.equal(unsupportedPreview.sizeBytes, Buffer.byteLength("zip bytes"));
+  const outsidePreview = await buildBrowseFilePreview(roots, "downloads", "../outside.txt", thumbnail);
+  assert.equal(outsidePreview.kind, "error");
+  assert.match(outsidePreview.error, /outside the approved folders/);
+});
+
+test("searches scan file names and paths without returning unbounded results", () => {
+  const files = [
+    { name: "Research-notes.pdf", path: "C:\\Users\\Paul\\Documents\\Research-notes.pdf" },
+    { name: "budget.csv", path: "C:\\Users\\Paul\\Documents\\Finance\\budget.csv" },
+    { name: "slides.pptx", path: "C:\\Users\\Paul\\Desktop\\Study\\slides.pptx" }
+  ];
+  assert.deepEqual(searchFileRecords(files, "rEsEaRcH").results.map((file) => file.name), [
+    "Research-notes.pdf"
+  ]);
+  assert.deepEqual(searchFileRecords(files, "finance").results.map((file) => file.name), ["budget.csv"]);
+  assert.deepEqual(searchFileRecords(files, " ").results, []);
+
+  const manyFiles = Array.from({ length: 105 }, (_, index) => ({
+    name: `report-${index}.pdf`,
+    path: `C:\\Documents\\report-${index}.pdf`
+  }));
+  const limited = searchFileRecords(manyFiles, "report");
+  assert.equal(limited.total, 105);
+  assert.equal(limited.results.length, 100);
+});
+
 test("returns bounded image thumbnails for PNG, JPG, GIF, and WebP", async (t) => {
   const roots = await createFixture(t);
   const downloads = roots.find((root) => root.id === "downloads");
@@ -401,23 +457,34 @@ test("purpose-folder index stores only folders inside approved roots", async (t)
     path: researchPath,
     parentType: documents.id
   });
+  const nestedResearchPath = path.join(documents.path, "School", "Research");
+  await fs.mkdir(nestedResearchPath, { recursive: true });
+  await addPurposeFolder(indexPath, roots, {
+    name: "Course Research",
+    path: nestedResearchPath,
+    parentType: documents.id
+  });
   await addPurposeFolder(indexPath, roots, {
     name: "Research",
     path: researchPath,
     parentType: documents.id
   });
   const purposeFolders = await readPurposeFolders(indexPath, roots);
-  assert.equal(purposeFolders.length, 1);
+  assert.equal(purposeFolders.length, 2);
   assert.equal(purposeFolders[0].name, "Research");
-  assert.equal(path.basename(purposeFolders[0].path), "Research");
-  assert.equal(purposeFolders[0].parentType, documents.id);
-  assert.equal(purposeFolders[0].available, true);
+  assert.ok(purposeFolders.some((folder) => folder.name === "Course Research"
+    && path.basename(folder.path) === "Research"
+    && folder.parentType === documents.id
+    && folder.available));
   await assert.rejects(addPurposeFolder(indexPath, roots, {
     name: "Outside",
     path: path.join(path.dirname(documents.path), "outside"),
     parentType: documents.id
-  }), /directly inside an approved folder/);
-  assert.equal((await readPurposeFolders(indexPath, roots)).length, 1);
+  }), /inside an approved folder/);
+  assert.equal((await readPurposeFolders(indexPath, roots)).length, 2);
+  await fs.rm(documents.path, { recursive: true });
+  const unavailable = await readPurposeFolders(indexPath, roots);
+  assert.ok(unavailable.every((folder) => !folder.available));
 });
 
 test("rejects a source path that escapes its approved root", async (t) => {

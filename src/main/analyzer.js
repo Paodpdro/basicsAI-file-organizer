@@ -403,4 +403,4 @@ async function buildMoveSuggestions(folders, roots) {
   return { suggestions: safeSuggestions, skippedFiles, alreadyOrganized };
 }
 
-module.exports = { buildMoveSuggestions, fileTypeLabel, isUnsafeToHandle };
+module.exports = { buildMoveSuggestions, extractText, fileTypeLabel, isUnsafeToHandle };

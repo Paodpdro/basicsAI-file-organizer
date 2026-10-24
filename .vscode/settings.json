@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^powershell\\.exe -NoProfile -Command \"node --version; npm --version; \\(Get-Command node\\.exe\\)\\.Source\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

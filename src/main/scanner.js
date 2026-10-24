@@ -117,6 +117,7 @@ async function scanFolders(roots) {
 async function listDirectory(roots, rootId, relativeDirectory = "") {
   const root = roots.find((item) => item.id === rootId);
   if (!root) throw new Error("That folder is not available.");
+  if (typeof relativeDirectory !== "string") throw new Error("That folder location is not valid.");
 
   const canonicalRoot = await getCanonicalRoot(root);
   if (!canonicalRoot.canonicalPath) throw new Error(canonicalRoot.error);
@@ -138,17 +139,48 @@ async function listDirectory(roots, rootId, relativeDirectory = "") {
     .map(async (entry) => {
       const entryPath = path.join(realPath, entry.name);
       let modifiedAt = null;
+      let sizeBytes = null;
       try {
-        modifiedAt = (await fs.stat(entryPath)).mtime.toISOString();
+        const stats = await fs.stat(entryPath);
+        modifiedAt = stats.mtime.toISOString();
+        if (entry.isFile()) sizeBytes = stats.size;
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
       }
       return {
+        rootId,
         name: entry.name,
         kind: entry.isDirectory() ? "folder" : entry.isFile() ? "file" : "other",
+        path: entryPath,
+        relativePath: path.relative(canonicalRoot.canonicalPath, entryPath),
+        sizeBytes,
         modifiedAt
       };
     }));
 }
 
-module.exports = { createFolderRoots, isInsideRoot, listDirectory, scanFolders };
+async function resolveFilePath(roots, rootId, relativeFile) {
+  const root = roots.find((item) => item.id === rootId);
+  if (!root) throw new Error("That file is outside the approved folders.");
+  if (typeof relativeFile !== "string" || path.isAbsolute(relativeFile)) {
+    throw new Error("That file is outside the approved folders.");
+  }
+
+  const canonicalRoot = await getCanonicalRoot(root);
+  if (!canonicalRoot.canonicalPath) throw new Error(canonicalRoot.error);
+  const candidate = path.resolve(canonicalRoot.canonicalPath, relativeFile);
+  if (!isInsideRoot(canonicalRoot.canonicalPath, candidate)) {
+    throw new Error("That file is outside the approved folders.");
+  }
+  const before = await fs.lstat(candidate);
+  if (before.isSymbolicLink() || !before.isFile()) {
+    throw new Error("The selected item is not a safe file.");
+  }
+  const realPath = await fs.realpath(candidate);
+  if (!isInsideRoot(canonicalRoot.canonicalPath, realPath)) {
+    throw new Error("That file is outside the approved folders.");
+  }
+  return { path: realPath, root: canonicalRoot, stats: await fs.stat(realPath) };
+}
+
+module.exports = { createFolderRoots, isInsideRoot, listDirectory, resolveFilePath, scanFolders };

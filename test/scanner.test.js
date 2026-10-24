@@ -3,7 +3,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { createFolderRoots, isInsideRoot, listDirectory, scanFolders } = require("../src/main/scanner");
+const { createFolderRoots, isInsideRoot, listDirectory, resolveFilePath, scanFolders } = require("../src/main/scanner");
 const { formatModifiedDate } = require("../src/renderer/date-utils");
 
 test("formats modified dates and safely labels missing or invalid dates", () => {
@@ -52,10 +52,22 @@ test("scans real fixture files and lists a selected folder", async (t) => {
     [{ name: "Class", kind: "folder" }, { name: "notes.txt", kind: "file" }]
   );
   const directoryEntries = await listDirectory(roots, "downloads");
+  const notesEntry = directoryEntries.find((entry) => entry.name === "notes.txt");
   assert.equal(
-    directoryEntries.find((entry) => entry.name === "notes.txt").modifiedAt,
+    notesEntry.modifiedAt,
     knownModifiedDate.toISOString()
   );
+  assert.equal(notesEntry.sizeBytes, Buffer.byteLength("Course notes"));
+  assert.equal(notesEntry.relativePath, "notes.txt");
+  assert.equal(await fs.realpath(notesEntry.path), await fs.realpath(notesPath));
+  const nestedEntries = await listDirectory(roots, "downloads", "Class");
+  assert.equal(nestedEntries[0].name, "report.pdf");
+  assert.equal(nestedEntries[0].relativePath, path.join("Class", "report.pdf"));
+
+  const resolved = await resolveFilePath(roots, "downloads", notesEntry.relativePath);
+  assert.equal(resolved.stats.size, Buffer.byteLength("Course notes"));
+  assert.equal(resolved.path, await fs.realpath(notesPath));
+  await assert.rejects(resolveFilePath(roots, "downloads", "../outside.txt"), /outside the approved folders/);
 });
 
 test("reports inaccessible roots and rejects traversal outside a selected root", async (t) => {

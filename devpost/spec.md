@@ -63,7 +63,7 @@ Exposes a small, explicit set of actions to the screen—start/rescan, list fold
 PRD ref: `prd.md > Browsing and searching`, `Scanning and organization suggestions`, `Deletion review`, and `Access problems`.
 
 ### Renderer Interface
-Displays the purpose-folder index, general-folder cards, Windows extras, folder contents, search, scan progress, move suggestions, deletion review, confirmation dialogs, and friendly empty/error messages. It contains no direct file-system access.
+Displays purpose-folder cards, general-folder cards, navigable folder contents, search results, grid/list controls, local file previews, scan progress, move suggestions, deletion review, confirmation dialogs, and friendly empty/error messages. It contains no direct file-system access.
 PRD ref: `prd.md > Screens and Layout`, `Look and Feel`, and `States and Boundaries`.
 
 ### Standard-Folder Scanner
@@ -84,7 +84,7 @@ For deletion tags, **duplicate** means matching SHA-256 content hashes, not mere
 PRD ref: `prd.md > Scanning and organization suggestions` and `Deletion review`.
 
 ### Purpose-Folder Index
-Stores the user's names and the real absolute paths of purpose folders, which may be nested under different general folders. The index is a navigation aid, not a virtual folder: files stay at the corresponding real paths. Paul can register an existing folder from one of the six roots or create a purpose folder with his own name; the app may suggest a name and parent location. Accepting a suggested move can create a missing purpose folder on disk only after confirmation.
+Stores the user's names and the real absolute paths of purpose folders, which may be nested under different general folders. The index is a navigation aid, not a virtual folder: files stay at the corresponding real paths. Paul can register an existing folder anywhere under one of the six roots with a native folder picker. Purpose-folder cards open their indexed paths, then allow normal browsing into child folders. Accepting a suggested move can create a missing purpose folder on disk only after confirmation.
 PRD ref: `prd.md > Browsing and searching`, `Scanning and organization suggestions`, and `Product Decisions`.
 
 ### File Operation Handler
@@ -92,11 +92,11 @@ Revalidates one approved file against the allowed roots, creates the selected re
 PRD ref: `prd.md > Scanning and organization suggestions`, `Deletion review`, and `States and Boundaries`.
 
 ### Search, Preview, and Open
-Searches the current scan's file names and paths. Preview displays supported images, text, and PDFs locally; unsupported or unreadable formats show a clear unavailable message with an Open action. Open uses Electron's `shell.openPath` so Windows launches the normal associated program. PDF Preview and text extraction use PDF.js; no previewed content leaves the computer.
+Searches the current scan's file names and paths case-insensitively, returning at most 100 matching records at a time. Grid/list controls apply to folder contents and search results. Preview returns only a bounded thumbnail for PNG/JPG/GIF/WebP, the first 50 KB of plain text for TXT/MD/JSON/CSV/JS, or up to the first 50 KB of extracted text from the first four pages of a PDF no larger than 6 MB. PDF.js performs extraction locally; PDFs without selectable text or over the extraction limit show Preview unavailable. Unsupported or unreadable formats show a clear unavailable message with an Open action. Open uses Electron's `shell.openPath` after revalidating the selected file beneath an approved root, so Windows launches the normal associated program. Render all text as text, never HTML; no previewed file contents leave the computer.
 PRD ref: `prd.md > Browsing and searching`.
 
 ### Local Preferences
-Stores the purpose-folder index and small UI preferences locally. Scan results and suggestions are temporary in-memory data and are replaced by Rescan; personal file contents are not saved as an index on disk.
+Stores the purpose-folder index locally. Grid/list choice lasts for the current app session; the app opens on the purpose-folder page when indexed folders are available and otherwise starts at the general folders. Scan results and suggestions are temporary in-memory data and are replaced by Rescan; personal file contents are not saved as an index on disk.
 PRD ref: `prd.md > States and Boundaries` and `Product Decisions`.
 
 ## Data Model
@@ -104,12 +104,13 @@ PRD ref: `prd.md > States and Boundaries` and `Product Decisions`.
 - **File record (memory during scan):** `path`, `name`, `extension`, `sizeBytes`, `modifiedAt`, optional reliable `accessedAt`, and optional extracted text used only for the current scan/preview.
 - **Move suggestion (memory):** one file's source root/path and metadata, proposed destination folder/path, reason, and review status. Each file is approved or skipped independently.
 - **Already organized summary (memory):** names, paths, and file counts for non-empty top-level subfolders, plus any standard root protected by project markers. These are not move suggestions or skipped files.
+- **Search result (memory):** bounded file metadata and a relative path for safe browse/preview/open actions. Search does not index or return file contents.
 - **Skipped file (memory):** file name, source path, and reason it cannot be safely handled (for example, unreadable or locked). Files with no matching destination rule and text-extraction failures that still allow safe metadata-based handling are not listed as skipped.
 - **Preview result (memory):** safe type, file name, byte size, current path, proposed destination, and either a bounded thumbnail or at most 50 KB of plain-text content. No preview action changes the file.
 - **Deletion suggestion (memory):** `filePath`, reason tags, hash only when needed for duplicate checking, and review status. Confirmed deletion sends the file to Recycle Bin.
 - **Purpose-folder index (local JSON):** entries of `{ name, path, parentType }`. Update after the user creates or accepts a folder; validate paths at load and use. If a path no longer exists, show it as unavailable and let the user remove or repair the entry.
-- **UI preferences (local JSON):** current grid/list choice and last selected page if useful. No account or sync.
-- **Persistence:** Save preferences/index under Electron `app.getPath("userData")`. Keep scan records, extracted text, and suggestion queues in memory only. Closing the app discards pending suggestions; a new launch rescans.
+- **UI state (memory):** current grid/list choice and selected page for the open session. No account or sync.
+- **Persistence:** Save the purpose-folder index under Electron `app.getPath("userData")`. Keep scan records, extracted text, search results, and suggestion queues in memory only. Closing the app discards pending suggestions; a new launch rescans.
 
 ## File Structure
 ```text
@@ -121,22 +122,24 @@ project/
 │   └── spec.md
 ├── src/
 │   ├── main/
-│   │   ├── main.js             # Create window; register IPC actions
-│   │   ├── scanner.js          # Resolve allowed roots and list safe file records
-│   │   ├── analyzer.js         # Extract local text and build explainable suggestions
-│   │   ├── file-operations.js  # Validate and perform confirmed moves/trash/open
-│   │   └── preferences.js      # Read/write purpose-folder index and UI preferences
+│   │   ├── main.js              # Create window; register IPC actions
+│   │   ├── scanner.js           # Resolve roots and list safe file records
+│   │   ├── analyzer.js          # Extract local text and build suggestions
+│   │   ├── destination-names.js # Collision-safe filenames
+│   │   ├── file-operations.js   # Validate and perform confirmed moves
+│   │   ├── file-search.js       # Search current scan metadata
+│   │   ├── preview.js           # Safe bounded image/text/PDF previews
+│   │   └── purpose-folder-store.js # Read/write purpose-folder index
 │   ├── preload/
 │   │   └── preload.js          # Narrow, validated screen-to-main API
 │   └── renderer/
 │       ├── index.html          # App window shell and page containers
 │       ├── styles.css          # Friendly palette, cards, layouts, focus styles
-│       ├── app.js              # Navigation, rendering, confirmations, view actions
-│       ├── preview.js          # Image/text/PDF preview and unsupported fallback
-│       └── assets/             # Local icons only; no remote assets
+│       ├── app.js              # Navigation, rendering, and safe view actions
+│       └── date-utils.js       # Safe display formatting for modified dates
 ├── test/
-│   ├── analyzer.test.js        # Rule and duplicate classification checks
-│   └── file-operations.test.js # Temporary-fixture move/trash validation
+│   ├── organization.test.js    # Analysis, previews, moves, and purpose folders
+│   └── scanner.test.js         # Safe scanning, listing, and path checks
 ├── package.json
 ├── package-lock.json
 └── README.md                   # Windows setup/run and safe demo instructions
@@ -145,7 +148,7 @@ project/
 ## External Services and Dependencies
 - **No external services.** No online AI, cloud storage, remote API, database, account, or deployment.
 - **Electron** — desktop runtime and safe IPC. Docs: [Electron](https://www.electronjs.org/docs/latest/), [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc), [security](https://www.electronjs.org/docs/latest/tutorial/security), [shell API](https://www.electronjs.org/docs/latest/api/shell).
-- **PDF.js / `pdfjs-dist`** — local PDF text extraction and rendering. Docs: [PDF.js](https://mozilla.github.io/pdf.js/).
+- **PDF.js / `pdfjs-dist`** — extracts PDF text locally for scan suggestions and bounded text previews. Docs: [PDF.js](https://mozilla.github.io/pdf.js/).
 - **Node.js built-ins** — file system/path/platform and cryptographic hash; docs: [fs](https://nodejs.org/api/fs.html), [path](https://nodejs.org/api/path.html), [os](https://nodejs.org/api/os.html), [crypto](https://nodejs.org/api/crypto.html).
 - No keys, network calls, service costs, or quotas.
 
@@ -155,6 +158,7 @@ project/
 - **A move-review preview is unsupported, corrupt, or unreadable** → show Preview unavailable with file name, size, type, current path, and destination; show a visible error if reading/decoding fails. Offer Open only in the general browsing experience. A text-extraction failure does not create a separate warning list; use safe metadata where possible. A file that cannot be safely handled is listed only in the skipped-files disclosure. Never claim unreadable means useless.
 - **A destination name already exists** → propose the first available numbered suffix and show it before approval; never overwrite. If the candidate changes before the move, refresh the preview and require approval for the new path.
 - **A path points outside the six allowed roots** → reject the operation and report that the location is outside the scan boundary.
+- **A browse, preview, or open target changes or becomes unavailable** → revalidate it beneath its approved root, show the failure, and keep the rest of the scan usable.
 
 ## What Was Simplified and Why
 - **Rule-based local suggestions** instead of an AI model — avoids accounts, keys, cost, and uploading sensitive student documents; suggestions are less context-aware and always require review.

@@ -60,25 +60,50 @@
           <h1>My folders</h1>
         </div>
         <div class="topbar-actions">
-          <button class="button button-secondary" id="suggestions-button" type="button">Review move suggestions</button>
+          <nav class="page-navigation" aria-label="Main navigation">
+            <button class="button button-secondary" id="purpose-folders-button" type="button" hidden>Purpose folders</button>
+            <button class="button button-secondary" id="general-folders-button" type="button">General folders</button>
+            <button class="button button-secondary" id="suggestions-button" type="button">Review move suggestions</button>
+            <button class="button button-secondary" id="add-purpose-folder-button" type="button">Add existing folder</button>
+          </nav>
           <button class="button button-primary" id="rescan-button" type="button">Rescan folders</button>
         </div>
       </header>
 
       <main>
-        <section id="folders-section" aria-labelledby="folders-heading">
+        <p class="move-notice" id="app-notice" role="status" hidden></p>
+        <section class="browser-toolbar" id="browser-toolbar" aria-label="Search and display">
+          <label for="file-search-input">Search files and folders</label>
+          <input id="file-search-input" type="search" placeholder="Search names or folder paths">
+          <span class="status-pill" id="scan-status" role="status">Preparing your folders…</span>
+          <div class="view-controls" role="group" aria-label="File layout">
+            <button class="button button-secondary" id="list-view-button" type="button" aria-pressed="true">List</button>
+            <button class="button button-secondary" id="grid-view-button" type="button" aria-pressed="false">Grid</button>
+          </div>
+        </section>
+
+        <section id="purpose-section" aria-labelledby="purpose-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <h2 id="purpose-heading">Purpose folders</h2>
+              <p>Find your real folders by what they’re for.</p>
+            </div>
+          </div>
+          <div class="folder-grid" id="purpose-folder-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="folders-section" aria-labelledby="folders-heading" hidden>
           <div class="section-heading">
             <div>
               <h2 id="folders-heading">General folders</h2>
               <p>Choose a folder to see what’s inside.</p>
             </div>
-            <span class="status-pill" id="scan-status" role="status">Preparing your folders…</span>
           </div>
           <div class="folder-grid" id="folder-grid" aria-live="polite"></div>
           <div class="access-issues" id="access-issues" aria-live="polite"></div>
         </section>
 
-        <section class="contents-section" id="contents-section" aria-labelledby="contents-heading">
+        <section class="contents-section" id="contents-section" aria-labelledby="contents-heading" hidden>
           <div class="section-heading">
             <div>
               <p class="eyebrow">Selected folder</p>
@@ -87,7 +112,27 @@
             </div>
             <button class="button button-secondary" id="back-button" type="button" hidden>Back to folders</button>
           </div>
+          <p class="move-notice" id="browse-notice" role="status" hidden></p>
           <ul class="file-list" id="file-list" aria-live="polite"></ul>
+        </section>
+
+        <section id="search-results-section" aria-labelledby="search-results-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <h2 id="search-results-heading">Search results</h2>
+              <p id="search-results-count" role="status"></p>
+            </div>
+          </div>
+          <p class="move-notice" id="search-notice" role="status" hidden></p>
+          <ul class="file-list" id="search-results-list" aria-live="polite"></ul>
+        </section>
+
+        <section id="file-preview-section" aria-labelledby="file-preview-heading" hidden>
+          <div class="section-heading">
+            <h2 id="file-preview-heading">File preview</h2>
+            <button class="button button-secondary" id="close-preview-button" type="button">Close preview</button>
+          </div>
+          <div class="preview-panel" id="file-preview-panel" aria-live="polite"></div>
         </section>
 
         <section id="suggestions-section" aria-labelledby="suggestions-heading" hidden>

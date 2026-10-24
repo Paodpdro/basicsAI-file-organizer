@@ -38,8 +38,24 @@ async function readPurposeFolders(indexPath, roots) {
     if (!root || !path.isAbsolute(entry.path)) {
       throw new Error(`The purpose-folder entry "${entry.name}" is outside the approved folders.`);
     }
-    const canonicalRoot = await fs.realpath(root.path);
     const resolvedPath = path.resolve(entry.path);
+    let canonicalRoot;
+    try {
+      canonicalRoot = await fs.realpath(root.path);
+    } catch (error) {
+      if (!["ENOENT", "EACCES", "EPERM"].includes(error.code)) throw error;
+      const lexicalRoot = path.resolve(root.path);
+      if (!isInsideRoot(lexicalRoot, resolvedPath)) {
+        throw new Error(`The purpose-folder entry "${entry.name}" is outside the approved folders.`);
+      }
+      validated.push({
+        name: entry.name,
+        path: resolvedPath,
+        parentType: entry.parentType,
+        available: false
+      });
+      continue;
+    }
     const canonicalParent = await fs.realpath(path.dirname(resolvedPath));
     const canonicalCandidate = path.join(canonicalParent, path.basename(resolvedPath));
     if (!isInsideRoot(canonicalRoot, canonicalParent) || !isInsideRoot(canonicalRoot, canonicalCandidate)) {
@@ -77,8 +93,8 @@ async function addPurposeFolder(indexPath, roots, entry) {
   const canonicalRoot = await fs.realpath(root.path);
   const folderPath = path.resolve(entry.path);
   const canonicalParent = await fs.realpath(path.dirname(folderPath));
-  if (!isInsideRoot(canonicalRoot, canonicalParent) || !samePath(canonicalParent, canonicalRoot)) {
-    throw new Error("The purpose folder must be directly inside an approved folder.");
+  if (!isInsideRoot(canonicalRoot, canonicalParent)) {
+    throw new Error("The purpose folder must be inside an approved folder.");
   }
   const canonicalFolder = path.join(canonicalParent, path.basename(folderPath));
   const realFolderPath = await fs.realpath(canonicalFolder);

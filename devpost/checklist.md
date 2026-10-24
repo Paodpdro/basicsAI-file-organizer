@@ -38,9 +38,9 @@ Build mode: learn
   Why now: Builds on the stable scan and real-folder index, then completes the everyday browsing journey without adding a separate database or virtual file system.
   PRD ref: `prd.md > The Core Journey` (steps 2–4), `Screens and Layout`, `Browsing and searching`, and `States and Boundaries`
   Spec ref: `spec.md > Renderer Interface`, `Purpose-Folder Index`, `Search, Preview, and Open`, `Local Preferences`, `Data Model`, and `Look and Feel`
-  Build: Add purpose-folder navigation and persistence, search over the current scan, grid/list switching, local image/text/PDF preview with an unavailable fallback, and Open through Windows file handling.
-  Verify (mechanical): Run `node --test`; verify filtering with known fixture names, grid/list shows the same files, supported preview types render without network access, unsupported types show the fallback, and Open reports errors rather than false success.
-  Learner check: Open a purpose folder, find a test file with search, switch layouts, preview a supported file, and use Open on a file whose type is unsupported for preview.
+  Build: Add purpose-folder navigation and persistence, register existing folders from within the six roots, browse nested folders, search the current scan, switch grid/list layouts, preview local images/text/PDF text safely with an unavailable fallback, and Open through Windows file handling.
+  Verify (mechanical): Run `node --test`; verify purpose-folder paths are validated, browsing and file opening reject paths outside approved roots, search filters names and paths with a 100-result cap, grid/list views render the same entries, supported image/text/PDF previews are bounded and local, unsupported types show the fallback, and Open reports errors rather than false success.
+  Learner check: Register an existing purpose folder, open it and a subfolder, find a test file with search, switch layouts, preview a supported file, and use Open on a file whose type is unsupported for preview. Confirm an out-of-root folder cannot be registered.
   Commit: `Add file search and preview controls`
 
 - [ ] **4. Review cautious deletion candidates safely**

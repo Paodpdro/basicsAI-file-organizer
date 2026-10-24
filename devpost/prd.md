@@ -42,10 +42,10 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 ### Browsing and searching
 Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Boundary`.
 - Display the familiar general folders as cards and preserve those folders on the computer.
-- Provide a distinct index to purpose-based folders and another page for Windows-related extras found in accessible personal folders. Purpose-based folders are real folders under their appropriate general location, not app-only groupings.
-- Within an opened folder, show each file's name, type, and last-modified date in either grid or list layout. Format dates like “Oct 12, 2026”; show “Unknown” when a date is missing. Paul can change the layout.
-- Provide search across the accessible personal files this version can see.
-- For a file, Preview attempts to show its contents inside the app; Open launches it the usual way on the computer.
+- Provide a distinct index to purpose-based folders and another page for Windows-related extras found in accessible personal folders. Purpose-based folders are real folders under their appropriate general location, not app-only groupings; Paul can register existing folders under the six standard roots.
+- Open purpose folders wherever they live under the six standard roots, and browse into their subfolders. Within an opened folder, show each file's name, type, and last-modified date in either grid or list layout. Format dates like “Oct 12, 2026”; show “Unknown” when a date is missing. Paul can change the layout.
+- Provide case-insensitive search across accessible personal file names and paths from the current scan.
+- For a file, Preview attempts to show its contents inside the app; Open launches it with the usual Windows application.
 - If Preview cannot display a file, say so clearly and offer Open instead. The app does not claim every format is previewable.
 - If there are no purpose-based folders yet, show the general-folder cards as the useful starting view.
 

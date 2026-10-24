@@ -4,6 +4,12 @@ contextBridge.exposeInMainWorld("organizer", {
   scanFolders: () => ipcRenderer.invoke("folders:scan"),
   listFolder: (rootId, relativeDirectory = "") =>
     ipcRenderer.invoke("folders:list", rootId, relativeDirectory),
+  searchFiles: (query) => ipcRenderer.invoke("files:search", query),
+  previewFile: (rootId, relativePath) =>
+    ipcRenderer.invoke("files:preview", rootId, relativePath),
+  openFile: (rootId, relativePath) =>
+    ipcRenderer.invoke("files:open", rootId, relativePath),
+  addExistingPurposeFolder: () => ipcRenderer.invoke("purpose-folders:add-existing"),
   skipMoveSuggestion: (suggestionId) => ipcRenderer.invoke("suggestions:skip", suggestionId),
   previewSuggestedFile: (suggestionId, destinationRootId, folderName) =>
     ipcRenderer.invoke("suggestions:preview", suggestionId, destinationRootId, folderName),
