@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data:;"
+    >
+    <title>Personal File Organizer</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="background-decorations" aria-hidden="true">
+      <svg class="decoration-large decoration-paper-one" viewBox="0 0 120 150">
+        <path d="M22 8h48l28 28v104H22z" fill="currentColor" fill-opacity=".16" stroke-width="4"/>
+        <path d="M70 8v30h28M38 62h42M38 82h42M38 102h31" stroke-width="5"/>
+      </svg>
+      <svg class="decoration-large decoration-folder-one" viewBox="0 0 170 130">
+        <path d="M10 34h57l17 18h76l-13 67H10z" fill="currentColor" fill-opacity=".16" stroke-width="5"/>
+        <path d="M10 34V20h53l15 14" stroke-width="5"/>
+      </svg>
+      <svg class="decoration-large decoration-paper-two" viewBox="0 0 120 150">
+        <path d="M22 8h48l28 28v104H22z" fill="currentColor" fill-opacity=".16" stroke-width="4"/>
+        <path d="M70 8v30h28M38 62h42M38 82h42M38 102h31" stroke-width="5"/>
+      </svg>
+      <svg class="decoration-large decoration-folder-two" viewBox="0 0 170 130">
+        <path d="M10 34h57l17 18h76l-13 67H10z" fill="currentColor" fill-opacity=".16" stroke-width="5"/>
+        <path d="M10 34V20h53l15 14" stroke-width="5"/>
+      </svg>
+      <svg class="decoration-small decoration-document" viewBox="0 0 32 38">
+        <path d="M5 2h14l8 8v26H5zM19 2v9h8M10 18h12M10 24h12M10 30h8" stroke-width="2.5"/>
+      </svg>
+      <svg class="decoration-small decoration-star" viewBox="0 0 36 36">
+        <path d="m18 2 4.6 9.3L33 13l-7.5 7.3 1.8 10.3-9.3-4.9-9.3 4.9 1.8-10.3L3 13l10.4-1.7z" fill="currentColor" fill-opacity=".18" stroke-width="2"/>
+      </svg>
+      <svg class="decoration-small decoration-image" viewBox="0 0 40 34">
+        <rect x="2" y="2" width="36" height="30" rx="5" stroke-width="2.5"/>
+        <circle cx="13" cy="11" r="3" stroke-width="2"/>
+        <path d="m5 28 10-10 6 6 5-5 9 9" stroke-width="2.5"/>
+      </svg>
+      <svg class="decoration-small decoration-music" viewBox="0 0 32 40">
+        <path d="M13 29V7l16-4v22M13 11l16-4" stroke-width="3"/>
+        <ellipse cx="7" cy="30" rx="6" ry="4" fill="currentColor" stroke-width="2"/>
+        <ellipse cx="23" cy="26" rx="6" ry="4" fill="currentColor" stroke-width="2"/>
+      </svg>
+      <svg class="decoration-small decoration-video" viewBox="0 0 40 34">
+        <rect x="2" y="3" width="36" height="28" rx="5" stroke-width="2.5"/>
+        <path d="m16 10 11 7-11 7z" fill="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Your files, a little more organized</p>
+          <h1>My folders</h1>
+        </div>
+        <button class="button button-primary" id="rescan-button" type="button">Rescan folders</button>
+      </header>
+
+      <main>
+        <section aria-labelledby="folders-heading">
+          <div class="section-heading">
+            <div>
+              <h2 id="folders-heading">General folders</h2>
+              <p>Choose a folder to see what’s inside.</p>
+            </div>
+            <span class="status-pill" id="scan-status" role="status">Preparing your folders…</span>
+          </div>
+          <div class="folder-grid" id="folder-grid" aria-live="polite"></div>
+          <div class="access-issues" id="access-issues" aria-live="polite"></div>
+        </section>
+
+        <section class="contents-section" aria-labelledby="contents-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Selected folder</p>
+              <h2 id="contents-heading">Choose a folder</h2>
+              <p id="folder-path">Your files will appear here.</p>
+            </div>
+            <button class="button button-secondary" id="back-button" type="button" hidden>Back to folders</button>
+          </div>
+          <ul class="file-list" id="file-list" aria-live="polite"></ul>
+        </section>
+      </main>
+      <footer><p>Your files stay on this computer.</p></footer>
+    </div>
+    <script src="date-utils.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

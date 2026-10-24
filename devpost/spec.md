@@ -47,7 +47,7 @@ Use the current supported Node.js LTS and compatible stable Electron/PDF.js rele
 
 ## Look and Feel
 - Use a spacious, approachable interface with clear cards, readable labels, and large, easy-to-find actions.
-- Use white with blue and yellow/gold accents; reserve red for deletion actions and warnings.
+- Use a soft yellow page background and rounded cream folder cards. Add large faded gray paper/folder SVGs and smaller gray document, star, image, music, and video SVGs behind content; keep the decoration `aria-hidden`, non-interactive, and low-opacity. The medium-blue header uses white heading/eyebrow text and a deeper-blue underline; white text must meet WCAG AA normal-text contrast. The Rescan button uses sunny yellow, readable medium-blue text, and a darker-yellow bottom edge with clear hover and focus states. Use Fredoka for headings/buttons and Nunito for body text, with `system-ui, sans-serif` fallbacks. Reserve red for deletion actions and warnings.
 - Keep copy short, descriptive, kind, and non-blaming. Use simple transitions only; no complex animation.
 - Make source and destination paths visually distinct and readable. Ensure the app remains usable with keyboard focus and visible focus indicators.
 - Implement with plain CSS; the palette and Duolingo-like friendliness do not require a component framework.
@@ -67,7 +67,7 @@ Displays the purpose-folder index, general-folder cards, Windows extras, folder 
 PRD ref: `prd.md > Screens and Layout`, `Look and Feel`, and `States and Boundaries`.
 
 ### Standard-Folder Scanner
-Finds Documents, Downloads, Desktop, Pictures, Music, and Videos for the current Windows user. Walks their subfolders without following directory links/reparse points outside the allowed roots. Skips inaccessible entries with a visible path/error summary; does not silently count them as scanned. For the Windows-extras page, classify common installer/executable files (including `.exe`, `.msi`, and `.msix`) only when they are found inside these personal roots.
+Finds Documents, Downloads, Desktop, Pictures, Music, and Videos for the current Windows user. Walks their subfolders without following directory links/reparse points outside the allowed roots. Skips inaccessible entries with a visible path/error summary; does not silently count them as scanned. Directory listings provide each entry's modified time; the renderer formats available dates as “Oct 12, 2026” and displays “Unknown” if a date is absent or invalid. For the Windows-extras page, classify common installer/executable files (including `.exe`, `.msi`, and `.msix`) only when they are found inside these personal roots.
 PRD ref: `prd.md > Scanning and organization suggestions` and `Access problems`.
 
 ### Local File Analyzer and Suggestion Builder

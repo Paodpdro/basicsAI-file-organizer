@@ -1,0 +1,14 @@
+{
+  "name": "personal-file-organizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local Windows desktop file organizer",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}

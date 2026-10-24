@@ -5,3 +5,6 @@
 .env
 .env.*
 !.env.example
+
+# Generated dependencies
+/node_modules/

@@ -32,7 +32,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 
 ## Look and Feel
 - Friendly and welcoming, with the approachable feel Paul likes in Duolingo, but without complex animation.
-- White, yellow/gold, and blue are the main colors; red is reserved for deletion-related actions or warnings.
+- Use a soft yellow page background with subtle, gray paper/folder and file-type SVG decorations behind content, rounded cream folder cards, and a medium-blue header with high-contrast white text and a deeper-blue underline. The Rescan button is sunny yellow with readable blue text. Use Fredoka for headings and buttons and Nunito for body text, with system sans-serif fallbacks. The interface should feel friendly and playful without making blue or yellow overpowering. Red is reserved for deletion-related actions or warnings.
 - Buttons feel clear and welcoming. Wording is short, simple, and descriptive, including for older people and people who are not file-system experts.
 - Feedback should never sound harsh or blame the user.
 - File browsing should feel familiar like Windows Explorer or Google Drive, but simpler and easier to use.
@@ -43,7 +43,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, and `The POC Boundary`.
 Source: `scope.md > The Core Loop`, `What "Working" Looks Like`, and `The POC Boundary`.
 - Display the familiar general folders as cards and preserve those folders on the computer.
 - Provide a distinct index to purpose-based folders and another page for Windows-related extras found in accessible personal folders. Purpose-based folders are real folders under their appropriate general location, not app-only groupings.
-- Within an opened folder, show files in either grid or list layout. Paul can change the layout.
+- Within an opened folder, show each file's name, type, and last-modified date in either grid or list layout. Format dates like “Oct 12, 2026”; show “Unknown” when a date is missing. Paul can change the layout.
 - Provide search across the accessible personal files this version can see.
 - For a file, Preview attempts to show its contents inside the app; Open launches it the usual way on the computer.
 - If Preview cannot display a file, say so clearly and offer Open instead. The app does not claim every format is previewable.
