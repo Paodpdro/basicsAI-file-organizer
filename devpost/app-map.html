@@ -58,7 +58,7 @@
       <section aria-labelledby="overview">
         <h2 id="overview">What the app does</h2>
         <p>The Windows app scans six personal folders, suggests individual file moves, indexes purpose folders, and identifies possible duplicates or old files for review. You choose what to move, keep, or send to the Recycle Bin; the app does not silently change files.</p>
-        <p class="privacy">This proof of concept uses local rules and file checks; it does not include an AI model or upload file contents for analysis. Purpose-folder names are saved locally in Electron’s user-data folder. The heading and body fonts are loaded from Google Fonts when available, with system-font fallbacks.</p>
+        <p class="privacy">This proof of concept uses local rules and file checks; it does not include an AI model or upload file contents for analysis. Purpose-folder names are saved locally in Electron’s user-data folder. PDF.js resolves CMaps and standard fonts from its installed package, and non-fatal warning-level messages are suppressed. The heading and body fonts are loaded from Google Fonts when available, with system-font fallbacks.</p>
       </section>
 
       <section aria-labelledby="flow">
@@ -128,9 +128,9 @@
 
       <section aria-labelledby="run">
         <h2 id="run">Run it again</h2>
-        <p>In Windows PowerShell, from the project folder:</p>
+        <p>In Windows PowerShell, from the synchronized Windows-side project copy (Windows does not launch npm with the WSL UNC share as its working directory):</p>
         <p><code>npm install</code> then <code>npm start</code>. Run the automated checks with <code>npm test</code>.</p>
-        <p>Code snapshot: commit <code>dc7839d</code>. This map and the completion record are saved separately; the guide can drift as the code changes.</p>
+        <p>Code snapshot: commit <code>1cfd358</code>. The source checkout is <code>~/basicsAI</code>; run the synchronized Windows-side copy. This map and the completion record are saved separately; the guide can drift as the code changes.</p>
       </section>
 
       <footer>
