@@ -9,45 +9,62 @@ status: approved
 
 # Personal File Organizer
 
-A personal file organizer that keeps familiar Windows folders easy to browse, sorts files into useful destinations, and separates personal-purpose folders from Windows extras.
+A Windows desktop app for browsing familiar personal folders, moving individual files into purpose folders after review, and safely reviewing possible deletions.
 
-## The Unique Kernel
-It keeps the familiar folders—Documents, Downloads, Desktop, Pictures, Music, and Videos—as the main way to browse, while also organizing files into purpose-based folders Paul uses, such as coding or research for a specific subject. For example, student photos, ID, and grades found in Downloads could be suggested for a student-records folder under Documents. The organizer proposes where files belong and moves them only after Paul accepts.
+## Changes from the Original Hackathon Scope
+- Windows/WSL unified access is not part of the app; it scans six Windows-known personal folders only.
+- Grouped destination suggestions changed to individual file cards with preview, approve, or skip.
+- Deletion review now uses paged candidate cards, Keep, and confirmed deletion to the Recycle Bin.
+- Search, grid/list browsing, and Add existing folder are implemented.
+- The Windows extras page remains in the original POC boundary but is not built yet; it remains outstanding work.
+- A metadata-first performance revision is now planned; the current app still reads supported text/PDF content and hashes same-size files.
 
-## Who It's For
-Paul, whose personal files are disorganized and especially crowded in Downloads. New downloads accumulate there, so he has to manually move files to the familiar folders or subject folders where he wants them.
+## The Current App
 
-## The Core Loop
-Open the organizer to a grid of familiar folders—Documents, Downloads, Desktop, Pictures, Music, and Videos. Switch to a page of purpose-based folders, such as coding or research for a particular subject, or a separate page for Windows extras such as installers and `.exe` files. Search when looking for something specific. Ask it to scan personal files, review suggested destinations and possible deletions, and accept or reject changes before files are moved or deleted.
+### The Unique Kernel
+The app keeps Documents, Downloads, Desktop, Pictures, Music, and Videos as familiar places to browse, while indexing real purpose folders such as Research under Documents. It proposes individual moves and possible deletions, but Paul decides what happens to each file.
 
-## Inspiration & Identity
-Easy on the eyes and user-friendly—not a dense, technical file-manager or system-admin console. The familiar Windows folders are shown as grid cards; purpose-based folders and Windows extras each have their own page.
+### Who It's For
+Paul, whose personal files are disorganized and especially crowded in Downloads. New downloads accumulate there, so he has to manually move them to familiar folders or subject folders.
 
-## Why This Matters to the Learner
+### The Core Loop
+Open the Windows app and browse the six familiar folders or indexed purpose folders. Search names and paths, switch between grid and list, and preview or open a file. Rescan to refresh the inventory and review individual move suggestions or paged deletion candidates. Preview a move before approving it; keep a candidate or confirm deletion to send it to the Recycle Bin.
+
+### Inspiration & Identity
+Friendly and easy on the eyes—not a dense file-manager or system-admin console. The app uses rounded folder cards, playful typography, and simple language.
+
+### Why This Matters to the Learner
 Paul wants to make his own disorganized files easier to organize and find, and to get better at turning his coding knowledge into a working project.
 
-## What "Working" Looks Like
-In a short demo, Paul sees grid cards for Documents, Downloads, Desktop, Pictures, Music, and Videos, plus pages for purpose-based folders and Windows extras. The organizer finds files in Downloads, suggests moving student photos, an ID, and grades into a student-records folder under Documents, and suggests useful groups such as Webtech 2 or research for a specific subject. Paul can search for a file, review suggestions, and accept a move. The organizer asks before deleting anything.
+### What "Working" Looks Like
+The implemented app opens real Windows folders, browses purpose folders, searches and previews files, and shows individual reviewed moves and paged deletion candidates. Approving a move changes the real file system; confirmed deletion sends the file to the Recycle Bin. The Windows extras page is still missing.
 
-## The POC Boundary
-- Show Documents, Downloads, Desktop, Pictures, Music, and Videos as the familiar main grid, without removing or replacing those folders.
-- Provide a separate page for purpose-based folders such as coding, Webtech 2, or research for a specific subject.
-- Provide a separate page for Windows-related extras such as installers and `.exe` files.
-- Scan personal files in the folders this version can safely access, including Downloads and other personal locations; do not organize Windows, Program Files, or other system/application folders.
-- Search within the personal files this version can see.
-- Suggest useful folders and destinations within the familiar or purpose-based organization, then move files only after Paul accepts.
-- Flag possible deletions for review and ask before deleting; never delete automatically.
-- Keep the experience simple and approachable.
+### The POC Boundary
+- Implemented: scan the six standard Windows folders and their subfolders; show general-folder cards and a purpose-folder index.
+- Implemented: browse, search, preview, and open files; switch grid/list layouts; register an existing purpose folder inside an approved root.
+- Implemented: suggest per-file moves, preserve “Already organized” folders, preview before approval, and move only after approval.
+- Implemented: review files older than one year and exact-content duplicates with paged grids; Keep or confirm Delete to the Recycle Bin.
+- Outstanding from the original boundary: a separate Windows extras page for installers and executables found inside the six personal roots. No such page or classifier exists in the current app.
+- Not included: Windows, Program Files, arbitrary folders, or WSL paths as scan roots; automatic moves or unconfirmed deletion.
+
+## The Original Hackathon Scope (Preserved)
+The starting idea was a file-management tool for Paul's Windows and WSL file trees, focused on removing old/redundant files, suggesting useful folder structures, and applying changes only after acceptance.
+
+The original core loop included:
+- Familiar Documents, Downloads, Desktop, Pictures, Music, and Videos.
+- Separate pages for purpose-based folders and Windows extras such as installers and `.exe` files.
+- Search over personal files, suggestions for useful destinations, and review before moving or deleting.
+
+The original POC boundary included the six familiar folders, purpose folders, a Windows extras page, search, accepted moves, and cautious deletion review. The extras page was never implemented and remains outstanding. The original plan deferred a Windows–WSL bridge, AI-assisted assessment, advanced cleanup, and a complete file-manager replacement. Windows/system/application folders, blind auto-sorting, automatic deletion, and the Teleparty-inspired watch-party extension were explicitly cut.
 
 ## Later
-- Reach Windows files and WSL Ubuntu files as one place, including searching or copying between them.
-- More sophisticated cleanup and categorization beyond the proof of concept.
-- AI-assisted file assessment after deciding how file contents remain private, such as on-device analysis versus explicitly approved cloud processing.
-- A richer library of folder types, templates, and browsing views.
+- Implement the remaining Windows extras page, or explicitly defer it from the final demo.
+- Improve scan responsiveness with a metadata-first inventory and bounded concurrent metadata reads.
+- Consider a Windows–WSL view, broader cleanup rules, or AI-assisted assessment only after separate scope and privacy decisions.
 
 ## Explicitly Cut
-- **Windows, Program Files, and other system/application folders** — changing these files could break the computer; the organizer preserves the familiar personal folders and focuses on personal files.
-- **Blind auto-sorting or automatic deletion** — Paul needs to review and accept suggested changes.
-- **A full Windows ↔ WSL bridge** — wanted, but not needed to prove the first version.
-- **A complete, polished file manager** — too broad for a 2–4 hour proof of concept.
-- **A Teleparty-style watch-party extension** — inspiration only, not part of this project.
+- **System/application folders and arbitrary roots** — scanning and changing those locations is outside the six approved personal folders.
+- **Blind auto-sorting and automatic deletion** — each move or deletion remains a user decision.
+- **A full Windows ↔ WSL bridge** — outside the current proof of concept.
+- **A complete Windows Explorer replacement** — too broad for this project.
+- **A Teleparty-style watch-party extension** — inspiration only, not this project.
