@@ -1,6 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const { pathToFileURL } = require("node:url");
 const { isInsideRoot } = require("./scanner");
 const { nextAvailableFileName, readExistingNames } = require("./destination-names");
 
@@ -50,8 +51,25 @@ const TYPE_LABELS = {
 const MAX_TEXT_BYTES = 512 * 1024;
 const MAX_PDF_BYTES = 6 * 1024 * 1024;
 const MAX_PDF_PAGES = 4;
+const PDFJS_ROOT = path.resolve(path.dirname(require.resolve("pdfjs-dist/legacy/build/pdf.mjs")), "../..");
+const PDFJS_CMAP_URL = pathToFileURL(`${path.join(PDFJS_ROOT, "cmaps")}${path.sep}`).href;
+const PDFJS_STANDARD_FONT_DATA_URL = pathToFileURL(
+  `${path.join(PDFJS_ROOT, "standard_fonts")}${path.sep}`
+).href;
 
 let pdfjsPromise;
+
+function createPdfJsOptions(pdfjs, data) {
+  return {
+    data,
+    cMapUrl: PDFJS_CMAP_URL,
+    cMapPacked: true,
+    standardFontDataUrl: PDFJS_STANDARD_FONT_DATA_URL,
+    isEvalSupported: false,
+    useSystemFonts: true,
+    verbosity: pdfjs.VerbosityLevel.ERRORS
+  };
+}
 
 function fileTypeLabel(fileName) {
   const extension = path.extname(fileName).toLowerCase();
@@ -106,12 +124,8 @@ async function extractText(roots, file) {
     return { text: "", warning: "PDF text extraction was skipped because this file is larger than 6 MB." };
   }
   pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs");
-  const { getDocument } = await pdfjsPromise;
-  const loadingTask = getDocument({
-    data: new Uint8Array(result.content),
-    isEvalSupported: false,
-    useSystemFonts: true
-  });
+  const pdfjs = await pdfjsPromise;
+  const loadingTask = pdfjs.getDocument(createPdfJsOptions(pdfjs, new Uint8Array(result.content)));
   try {
     const document = await loadingTask.promise;
     const pages = [];
@@ -403,4 +417,10 @@ async function buildMoveSuggestions(folders, roots) {
   return { suggestions: safeSuggestions, skippedFiles, alreadyOrganized };
 }
 
-module.exports = { buildMoveSuggestions, extractText, fileTypeLabel, isUnsafeToHandle };
+module.exports = {
+  buildMoveSuggestions,
+  createPdfJsOptions,
+  extractText,
+  fileTypeLabel,
+  isUnsafeToHandle
+};

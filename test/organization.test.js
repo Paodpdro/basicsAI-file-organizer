@@ -3,7 +3,8 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { buildMoveSuggestions } = require("../src/main/analyzer");
+const { fileURLToPath, pathToFileURL } = require("node:url");
+const { buildMoveSuggestions, createPdfJsOptions } = require("../src/main/analyzer");
 const { searchFileRecords } = require("../src/main/file-search");
 const { createMoveSuggestionQueue } = require("../src/main/file-operations");
 const { addPurposeFolder, readPurposeFolders } = require("../src/main/purpose-folder-store");
@@ -58,6 +59,25 @@ async function scanAndBuildSuggestions(roots) {
 function findSuggestion(suggestions, fileName) {
   return suggestions.find((suggestion) => suggestion.fileName === fileName);
 }
+
+test("configures PDF.js with bundled CMaps and standard fonts and suppresses warnings", async () => {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const options = createPdfJsOptions(pdfjs, new Uint8Array());
+  const packageRoot = path.resolve(
+    path.dirname(require.resolve("pdfjs-dist/legacy/build/pdf.mjs")),
+    "../.."
+  );
+
+  assert.equal(options.cMapUrl, pathToFileURL(`${path.join(packageRoot, "cmaps")}${path.sep}`).href);
+  assert.equal(
+    options.standardFontDataUrl,
+    pathToFileURL(`${path.join(packageRoot, "standard_fonts")}${path.sep}`).href
+  );
+  assert.equal(options.cMapPacked, true);
+  assert.equal(options.verbosity, pdfjs.VerbosityLevel.ERRORS);
+  assert.equal((await fs.stat(fileURLToPath(options.cMapUrl))).isDirectory(), true);
+  assert.equal((await fs.stat(fileURLToPath(options.standardFontDataUrl))).isDirectory(), true);
+});
 
 async function comparablePath(filePath) {
   return path.join(await fs.realpath(path.dirname(filePath)), path.basename(filePath)).toLowerCase();

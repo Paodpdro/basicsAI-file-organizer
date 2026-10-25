@@ -28,20 +28,20 @@ PRD ref: `prd.md > The Core Journey`.
 7. Move-review previews show a bounded thumbnail for PNG/JPG/GIF/WebP, up to the first 50 KB of TXT/MD/JSON/CSV/JS as plain text, or “Preview unavailable” with file metadata for other types. Preview errors are visible. Open asks Windows to use its usual application. Rescan repeats steps 2–3 and refreshes the suggestions and summaries.
 
 ## Stack
-- **Electron** — opens a standalone Windows window and provides the main/preload/renderer separation. Documentation: [Electron documentation](https://www.electronjs.org/docs/latest/), [process model](https://www.electronjs.org/docs/latest/tutorial/process-model), [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc), [security](https://www.electronjs.org/docs/latest/tutorial/security).
+- **Electron, not Express** — this project is a standalone Windows desktop app. Electron opens its own window and provides the main/preload/renderer separation needed to safely expose approved local-file operations. Express would serve a website over HTTP in a browser, which is not how this app runs and would add a server layer the POC does not need. Documentation: [Electron documentation](https://www.electronjs.org/docs/latest/), [process model](https://www.electronjs.org/docs/latest/tutorial/process-model), [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc), [security](https://www.electronjs.org/docs/latest/tutorial/security).
 - **JavaScript, HTML, and CSS** — plain browser technologies for the window, chosen to build on Paul's existing experience rather than add a UI framework.
 - **Node.js built-in `fs`, `path`, `os`, and `crypto` modules** — locate allowed folders, inspect files, create folders, move files, and calculate exact-content duplicate hashes. Documentation: [File system](https://nodejs.org/api/fs.html), [Path](https://nodejs.org/api/path.html), [OS](https://nodejs.org/api/os.html), [Crypto](https://nodejs.org/api/crypto.html).
-- **PDF.js (`pdfjs-dist`)** — locally extracts PDF text for scan suggestions and renders PDFs in Preview. Documentation: [PDF.js project and examples](https://mozilla.github.io/pdf.js/). Confirm a compatible package version and Electron setup in the first build step.
+- **PDF.js (`pdfjs-dist`)** — locally extracts PDF text for scan suggestions and previews. The app resolves CMaps and standard fonts from the installed package's bundled `cmaps/` and `standard_fonts/` folders; it does not download these assets. PDF.js warning-level diagnostics are suppressed to avoid non-fatal font/CMap noise, while errors remain reportable. Documentation: [PDF.js project and examples](https://mozilla.github.io/pdf.js/).
 - **Node.js built-in test runner** — focused tests for rules and safe file operations without adding a test framework. Documentation: [Node.js test runner](https://nodejs.org/api/test.html).
 - **npm** — install and run project dependencies. No Express, Mustache, database, AI model, login, API key, or external service.
 
 Use the current supported Node.js LTS and compatible stable Electron/PDF.js releases; pin the selected versions in `package.json` and `package-lock.json` during setup. Verify compatibility in the build rather than guessing versions in this planning document.
 
 ## Where It Runs and How Someone Tries It
-- **Runtime:** Windows desktop app, launched in its own Electron window. Development files may be edited in WSL, but install, run, and verify the app using the Windows Node.js/npm environment so real Windows folders and File Explorer behavior are tested.
+- **Runtime:** Windows desktop app, launched in its own Electron window via `npm start`; there is no Express server or browser URL. Development files may be edited in WSL, but install, run, and verify the app using the Windows Node.js/npm environment so real Windows folders and File Explorer behavior are tested.
 - **Prerequisite:** Supported Node.js LTS installed on Windows.
 - **First run:** Open the project directory from Windows PowerShell, run `npm install`, then run `npm start`. This opens the desktop app; no browser address, hosted server, or API key is needed.
-- **Workspace note:** Confirm during the first build step how Windows PowerShell reaches this WSL workspace. If Electron or npm cannot run reliably from the WSL network path, use a Windows-side working copy of the project; keep the source changes synchronized.
+- **Project location and run copy:** The source repository for this app is `~/basicsAI`; the active workspace and Git root were verified to resolve to that project. Windows cannot run `npm start` while its working directory is the WSL UNC path (`\\wsl.localhost\...`), because the npm command shell rejects UNC working directories. Keep a Windows-side copy synchronized from `~/basicsAI` and run Electron there; verify it contains the same source changes before testing. This does not make the app an Express/browser app—the runtime remains Electron.
 - **Demo:** Start the app with `npm start`, scan a small set of test files in the six standard folders, review a proposed move, confirm it, and show the new real folder/file in File Explorer. Also demonstrate a deletion candidate being sent to Recycle Bin only after confirmation, a Preview, and the clean empty state where practical.
 - **Submission:** A short demo video and public GitHub repository are required. Deployment is optional and not part of this local-only app.
 
@@ -165,6 +165,7 @@ project/
 - **A destination name already exists** → propose the first available numbered suffix and show it before approval; never overwrite. If the candidate changes before the move, refresh the preview and require approval for the new path.
 - **A path points outside the six allowed roots** → reject the operation and report that the location is outside the scan boundary.
 - **A browse, preview, or open target changes or becomes unavailable** → revalidate it beneath its approved root, show the failure, and keep the rest of the scan usable.
+- **PDF.js cannot find a CMap or standard font, or encounters a non-fatal font warning** → use the package's local bundled asset folders and suppress warning-level diagnostic noise; keep errors visible through the existing preview/suggestion error paths.
 
 ## What Was Simplified and Why
 - **Rule-based local suggestions** instead of an AI model — avoids accounts, keys, cost, and uploading sensitive student documents; suggestions are less context-aware and always require review.
