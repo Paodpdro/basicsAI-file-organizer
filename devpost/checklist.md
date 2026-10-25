@@ -53,6 +53,16 @@ Build mode: learn
   Learner check: Set each review page to 5, 10, and 50 items, preview a disposable duplicate or old test file, choose Keep first, then test Delete on a separate disposable file and confirm it is recoverable from Recycle Bin. Tell me if the previews, tags, page controls, and confirmation make the decisions understandable.
   Commit: `Add confirmed deletion review`
 
+- [ ] **5. Speed up large folder scans without changing review safeguards**
+  Becomes usable: Scanning large personal folders reads metadata without parsing file contents, shows the running file count, skips known cache folders with a visible reason while preserving folder totals, and keeps exact-duplicate review working through cached hashes.
+  Why now: The browsing, organization, and deletion journeys already work; this focused performance pass addresses the reported slow scan while protecting the established review and approval behavior.
+  PRD ref: `prd.md > The Core Journey` (steps 1 and 7), `Scanning and organization suggestions`, `Deletion review`, and `States and Boundaries`
+  Spec ref: `spec.md > Standard-Folder Scanner`, `Local File Analyzer and Suggestion Builder`, `Duplicate Checker and Hash Cache`, `Preload Bridge`, `Renderer Interface`, `Data Model`, `Important Failure Modes`, and `File Structure`
+  Build: Use a worker pool capped at about 16 concurrent metadata `stat` operations; do not read or parse content during inventory or suggestion generation. Exclude known cache folders such as `node_modules`, `.git`, `.cache`, `.npm`, and `.pnpm-store`, report each path and reason, and count directory entries beneath exclusions without statting or storing descendant file records. Preserve project-marker protection and metadata-based suggestions; label unmatched items “Needs preview.” Emit scan progress to the UI and log elapsed time per standard root. Cache SHA-256 digests locally by canonical path, size, and modified timestamp for same-size duplicate groups only; invalidate stale entries and store no contents. Keep previews click-triggered and retain all existing move/delete approval protections.
+  Verify (mechanical): Run `npm test`. Focused tests verify the metadata worker never exceeds 16 concurrent stats; cache trees are reported, their descendant file counts remain in totals without file records, and ordinary scan results remain correct; progress counts advance and per-root durations are logged; suggestion building does not extract file contents and still preserves project protection/metadata rules; duplicate detection still requires equal size and matching SHA-256, reuses a valid cache entry, and rehashes after path/size/modified-time invalidation.
+  Learner check: In Windows, rescan Downloads with a known cache folder and several ordinary test files. Confirm the count advances, the excluded folder and reason are visible, the folder total remains accurate, and ordinary file/move results still make sense. Confirm the app log records elapsed time for each available standard folder; click Preview on one file and verify it loads only then.
+  Commit: `Speed up large folder scans`
+
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — confirmed folder browsing works, compared the displayed files with Explorer, and refined the palette, card shape, header, button, dates, and background icons through hands-on feedback before organization suggestions were added.
@@ -79,6 +89,7 @@ Reflection: Not offered — the learner declined the activity and moved to demo 
 Activity mode: Brief evidence-based recap; guided route declined. App map prepared as a take-home reference.
 
 ## Revisions
+- Added Slice 5 after the approved scan-performance requirements were incorporated into the planning documents but not the original build checklist; implementation remains unstarted until this revised slice is approved.
 - Slice 2 interaction revision — learner approved individual per-file cards instead of grouped destination cards, protection and “Already organized” summary, skipped disclosure limited to files unsafe to handle, removal of the failed-extraction list as out of scope, visible preview errors, and collision suffixes shown before approval with no overwrites. Later loose-root feedback refines the protection rule.
 - Superseded Slice 2 interaction revision — an earlier draft called for destination-group cards, grouped file-type counts, and group-level approve/skip. The learner later approved individual per-file cards instead; only that newer behavior is in scope.
 - Slice 2 Windows learner feedback — the first check found suggestions inside existing Documents subfolders such as “1.Bun” and “QU.” Paul requested loose-root files only; nested folder contents must be left untouched and summarized as “Already organized.” PRD, spec, implementation, and learner check were updated; the Windows retest confirmed nested files are left alone and loose files remain eligible.
