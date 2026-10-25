@@ -243,6 +243,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .review-pagination select { min-height: 42px; padding: .45rem .6rem; border: 1px solid #b9cad6; border-radius: 12px; background: #fff; color: var(--navy); font: inherit; }
 .review-pagination span { color: var(--muted); font-size: .9rem; }
 .review-pagination button:disabled { cursor: default; opacity: .55; }
+.suggestion-card > .preview-button { max-width: 100%; white-space: normal; }
 .deletion-card {
   display: grid;
   gap: .8rem;

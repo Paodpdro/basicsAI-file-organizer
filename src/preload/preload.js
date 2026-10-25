@@ -2,6 +2,12 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("organizer", {
   scanFolders: () => ipcRenderer.invoke("folders:scan"),
+  onScanProgress: (listener) => {
+    if (typeof listener !== "function") throw new Error("A scan progress listener is required.");
+    const handler = (_event, progress) => listener(progress);
+    ipcRenderer.on("folders:scan-progress", handler);
+    return () => ipcRenderer.removeListener("folders:scan-progress", handler);
+  },
   listFolder: (rootId, relativeDirectory = "") =>
     ipcRenderer.invoke("folders:list", rootId, relativeDirectory),
   searchFiles: (query) => ipcRenderer.invoke("files:search", query),

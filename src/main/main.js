@@ -2,6 +2,7 @@ const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = r
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { buildMoveSuggestions, fileTypeLabel } = require("./analyzer");
+const { createDuplicateHashCache } = require("./duplicate-hash-cache");
 const { buildDeletionCandidates, createDeletionReviewQueue } = require("./deletion-review");
 const { createMoveSuggestionQueue } = require("./file-operations");
 const { searchFileRecords } = require("./file-search");
@@ -11,6 +12,7 @@ const { buildBrowseFilePreview } = require("./preview");
 
 let folderRoots = [];
 let purposeIndexPath;
+let duplicateHashCachePath;
 let mainWindow;
 let scannedFiles = [];
 let suggestionQueue = createMoveSuggestionQueue(folderRoots, []);
@@ -44,10 +46,30 @@ function createWindow() {
 app.whenReady().then(() => {
   folderRoots = createFolderRoots((name) => app.getPath(name));
   purposeIndexPath = path.join(app.getPath("userData"), "purpose-folders.json");
+  duplicateHashCachePath = path.join(app.getPath("userData"), "duplicate-hashes.json");
 
   ipcMain.handle("folders:scan", async () => {
     scannedFiles = [];
-    const folders = await scanFolders(folderRoots);
+    let lastProgressCount = -1;
+    let lastProgressAt = 0;
+    let lastProgressRootId;
+    const folders = await scanFolders(folderRoots, {
+      onProgress: (progress) => {
+        const now = Date.now();
+        const shouldSend = progress.complete ||
+          progress.rootId !== lastProgressRootId ||
+          progress.scannedCount - lastProgressCount >= 64 ||
+          now - lastProgressAt >= 100;
+        if (!shouldSend || !mainWindow || mainWindow.isDestroyed()) return;
+        mainWindow.webContents.send("folders:scan-progress", progress);
+        lastProgressCount = progress.scannedCount;
+        lastProgressAt = now;
+        lastProgressRootId = progress.rootId;
+      },
+      onFolderTiming: ({ rootLabel, durationMs, fileCount = 0 }) => {
+        console.info(`[scan] ${rootLabel}: ${fileCount} files in ${durationMs} ms`);
+      }
+    });
     const canonicalRoots = new Map();
     for (const folder of folders) {
       if (folder.available) canonicalRoots.set(folder.id, await fs.realpath(folder.path));
@@ -59,8 +81,11 @@ app.whenReady().then(() => {
       rootLabel: folder.label,
       typeLabel: fileTypeLabel(file.name)
     })));
-    const { suggestions, skippedFiles, alreadyOrganized } = await buildMoveSuggestions(folders, folderRoots);
-    const deletionReview = await buildDeletionCandidates(folderRoots, scannedFiles);
+    const { suggestions, skippedFiles, alreadyOrganized, needsPreview } =
+      await buildMoveSuggestions(folders, folderRoots);
+    const hashCache = await createDuplicateHashCache(duplicateHashCachePath, scannedFiles);
+    const deletionReview = await buildDeletionCandidates(folderRoots, scannedFiles, { hashCache });
+    await hashCache.flush();
     const purposeFolders = (await readPurposeFolders(purposeIndexPath, folderRoots)).map((folder) => ({
       ...folder,
       rootId: folder.parentType,
@@ -80,7 +105,9 @@ app.whenReady().then(() => {
       folders: folders.map(({ files, ...folder }) => folder),
       suggestions,
       skippedFiles,
+      skippedFolders: folders.flatMap((folder) => folder.skippedFolders ?? []),
       alreadyOrganized,
+      needsPreview,
       deletionCandidates: deletionReview.candidates,
       deletionIssues: deletionReview.issues,
       purposeFolders

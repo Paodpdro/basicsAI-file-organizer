@@ -83,18 +83,23 @@ async function comparablePath(filePath) {
   return path.join(await fs.realpath(path.dirname(filePath)), path.basename(filePath)).toLowerCase();
 }
 
-test("uses local PDF text to suggest a research destination without changing the file", async (t) => {
+test("does not use PDF content for purpose suggestions and marks unmatched text files Needs preview", async (t) => {
   const roots = await createFixture(t);
   const sourcePath = path.join(roots.find((root) => root.id === "downloads").path, "A17.pdf");
+  const unmatchedTextPath = path.join(roots.find((root) => root.id === "downloads").path, "chapter.txt");
   await fs.writeFile(sourcePath, createPdf("A short research paper about marine plants."));
+  await fs.writeFile(unmatchedTextPath, "These are research notes.");
 
-  const { suggestions, skippedFiles } = await scanAndBuildSuggestions(roots);
-  const suggestion = findSuggestion(suggestions, "A17.pdf");
+  const { suggestions, skippedFiles, needsPreview } = await scanAndBuildSuggestions(roots);
+  const pdfSuggestion = findSuggestion(suggestions, "A17.pdf");
 
-  assert.equal(suggestion.destinationRootId, "documents");
-  assert.equal(suggestion.purposeFolderName, "Research");
-  assert.match(suggestion.reason, /readable text/);
+  assert.equal(pdfSuggestion.destinationRootId, "documents");
+  assert.equal(pdfSuggestion.purposeFolderName, "");
+  assert.doesNotMatch(pdfSuggestion.reason, /research/i);
   assert.equal(skippedFiles.length, 0);
+  assert.equal(needsPreview.length, 1);
+  assert.equal(needsPreview[0].fileName, "chapter.txt");
+  assert.match(needsPreview[0].reason, /Preview it/);
   assert.equal(await fs.readFile(sourcePath).then((content) => content.subarray(0, 5).toString()), "%PDF-");
 });
 
@@ -165,12 +170,13 @@ test("suggests only loose root files and summarizes existing subfolders as alrea
   assert.equal(alreadyOrganized.find((folder) => folder.folderName === "Desktop").fileCount, 2);
 });
 
-test("does not list unmatched files or text-extraction failures as skipped", async (t) => {
+test("keeps unmatched content-oriented files out of skipped files", async (t) => {
   const roots = await createFixture(t);
   const downloads = roots.find((root) => root.id === "downloads");
   await fs.writeFile(path.join(downloads.path, "unknown-extension.xyz"), "not classifiable");
   await fs.writeFile(path.join(downloads.path, "research-corrupt.pdf"), "not a real PDF");
   await fs.writeFile(path.join(downloads.path, "research-large.txt"), Buffer.alloc(600 * 1024, "x"));
+  await fs.writeFile(path.join(downloads.path, "meeting.txt"), "research notes");
 
   const result = await scanAndBuildSuggestions(roots);
 
@@ -178,19 +184,18 @@ test("does not list unmatched files or text-extraction failures as skipped", asy
   assert.equal(result.skippedFiles.length, 0);
   assert.ok(result.suggestions.some((suggestion) => suggestion.fileName === "research-corrupt.pdf"));
   assert.ok(result.suggestions.some((suggestion) => suggestion.fileName === "research-large.txt"));
+  assert.deepEqual(result.needsPreview.map((file) => file.fileName), ["meeting.txt"]);
 });
 
-test("lists a genuinely unreadable or missing source as skipped with a reason", async (t) => {
+test("lists a metadata read failure as skipped with a reason", async (t) => {
   const roots = await createFixture(t);
   const folders = await scanFolders(roots);
   const downloads = folders.find((folder) => folder.id === "downloads");
   const downloadsPath = await fs.realpath(roots.find((root) => root.id === "downloads").path);
-  downloads.files.push({
-    name: "research-locked.txt",
+  downloads.errors.push({
     path: path.join(downloadsPath, "research-locked.txt"),
-    rootId: "downloads",
-    sizeBytes: 4,
-    modifiedAt: new Date().toISOString()
+    message: "Permission denied",
+    kind: "file"
   });
 
   const { suggestions, skippedFiles } = await buildMoveSuggestions(folders, roots);
@@ -386,9 +391,9 @@ test("previews browsing files safely, including local PDF text and unsupported-f
 
 test("searches scan file names and paths without returning unbounded results", () => {
   const files = [
-    { name: "Research-notes.pdf", path: "C:\\Users\\Paul\\Documents\\Research-notes.pdf" },
-    { name: "budget.csv", path: "C:\\Users\\Paul\\Documents\\Finance\\budget.csv" },
-    { name: "slides.pptx", path: "C:\\Users\\Paul\\Desktop\\Study\\slides.pptx" }
+    { name: "Research-notes.pdf", path: "C:\\Users\\TestUser\\Documents\\Research-notes.pdf" },
+    { name: "budget.csv", path: "C:\\Users\\TestUser\\Documents\\Finance\\budget.csv" },
+    { name: "slides.pptx", path: "C:\\Users\\TestUser\\Desktop\\Study\\slides.pptx" }
   ];
   assert.deepEqual(searchFileRecords(files, "rEsEaRcH").results.map((file) => file.name), [
     "Research-notes.pdf"

@@ -52,6 +52,21 @@ async function hashFile(roots, file, canonicalRoots) {
   }
 }
 
+async function getCachedHash(roots, file, canonicalRoots, hashCache) {
+  if (!hashCache) return null;
+  const root = roots.find((item) => item.id === file.rootId);
+  const canonicalRoot = canonicalRoots.get(file.rootId);
+  if (!root || !canonicalRoot || !isInsideRoot(canonicalRoot, file.path)) {
+    throw new Error("The file is outside the approved folders.");
+  }
+  const relativePath = path.relative(canonicalRoot, file.path);
+  const resolved = await resolveFilePath(roots, file.rootId, relativePath);
+  if (!unchangedSinceScan(file, resolved.stats)) {
+    throw new Error("The file changed after scanning. Rescan before reviewing it.");
+  }
+  return hashCache.get(file);
+}
+
 function getOrCreateCandidate(candidateMap, file, root) {
   const key = path.resolve(file.path).toLocaleLowerCase();
   let candidate = candidateMap.get(key);
@@ -80,7 +95,7 @@ function addReason(candidate, tag, description) {
   candidate.reasons.push(description);
 }
 
-async function buildDeletionCandidates(roots, files, { now = new Date() } = {}) {
+async function buildDeletionCandidates(roots, files, { now = new Date(), hashCache = null } = {}) {
   const canonicalRoots = new Map();
   const issues = [];
   for (const root of roots) {
@@ -126,7 +141,11 @@ async function buildDeletionCandidates(roots, files, { now = new Date() } = {}) 
     const hashGroups = new Map();
     for (const file of sameSize) {
       try {
-        const hash = await hashFile(roots, file, canonicalRoots);
+        let hash = await getCachedHash(roots, file, canonicalRoots, hashCache);
+        if (!hash) {
+          hash = await hashFile(roots, file, canonicalRoots);
+          hashCache?.set(file, hash);
+        }
         const matchingFiles = hashGroups.get(hash) ?? [];
         matchingFiles.push(file);
         hashGroups.set(hash, matchingFiles);

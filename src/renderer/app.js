@@ -41,6 +41,12 @@ const movePageNext = document.querySelector("#move-page-next");
 const skippedFilesDisclosure = document.querySelector("#skipped-files-disclosure");
 const skippedFilesSummary = document.querySelector("#skipped-files-summary");
 const skippedFilesList = document.querySelector("#skipped-files-list");
+const skippedFoldersDisclosure = document.querySelector("#skipped-folders-disclosure");
+const skippedFoldersSummary = document.querySelector("#skipped-folders-summary");
+const skippedFoldersList = document.querySelector("#skipped-folders-list");
+const needsPreviewDisclosure = document.querySelector("#needs-preview-disclosure");
+const needsPreviewSummary = document.querySelector("#needs-preview-summary");
+const needsPreviewList = document.querySelector("#needs-preview-list");
 const alreadyOrganizedDisclosure = document.querySelector("#already-organized-disclosure");
 const alreadyOrganizedSummary = document.querySelector("#already-organized-summary");
 const alreadyOrganizedList = document.querySelector("#already-organized-list");
@@ -71,9 +77,13 @@ let moveSuggestions = [];
 let deletionCandidates = [];
 let deletionReviewIssues = [];
 let deletionReviewedCount = 0;
+let scanIssueCount = 0;
+let scanFailed = false;
 let movePage = 0;
 let deletionPage = 0;
 let skippedFiles = [];
+let skippedFolders = [];
+let needsPreview = [];
 let alreadyOrganized = [];
 let selectedFolder = null;
 let moveNotice = "";
@@ -110,6 +120,26 @@ function renderPagination(length, pageSize, page, controls) {
   controls.previous.disabled = currentPage === 0;
   controls.next.disabled = currentPage >= pageCount - 1;
   return { start: currentPage * pageSize, end: (currentPage + 1) * pageSize, page: currentPage };
+}
+
+function renderReviewCounts() {
+  const moveCount = moveSuggestions.length;
+  const deletionCount = deletionCandidates.length;
+  suggestionProgress.textContent = moveCount
+    ? `${moveCount} ${moveCount === 1 ? "move" : "moves"} to review`
+    : "All caught up";
+  deletionProgress.textContent = deletionCount
+    ? `${deletionCount} ${deletionCount === 1 ? "candidate" : "candidates"} to review`
+    : "All caught up";
+  if (!scanFailed) {
+    setStatus(scanIssueCount
+      ? `${scanIssueCount} locations need attention`
+      : reviewCountsSummary());
+  }
+}
+
+function reviewCountsSummary() {
+  return `${moveSuggestions.length} move suggestions · ${deletionCandidates.length} deletion candidates`;
 }
 
 function showMessage(message) {
@@ -594,7 +624,8 @@ function renderMoveSuggestion(suggestion, index) {
   const previewButton = document.createElement("button");
   previewButton.type = "button";
   previewButton.className = "button button-secondary preview-button";
-  previewButton.textContent = `Preview ${suggestion.fileName}`;
+  previewButton.textContent = "Preview file";
+  previewButton.setAttribute("aria-expanded", "false");
   card.append(previewButton);
 
   let previewRequest = 0;
@@ -653,6 +684,8 @@ function renderMoveSuggestion(suggestion, index) {
       processing: true
     });
     previewPanel.hidden = false;
+    previewButton.textContent = "Hide preview";
+    previewButton.setAttribute("aria-expanded", "true");
     reviewedDestinationPath = "";
     approveButton.disabled = true;
     previewPanel.replaceChildren(makeTextElement("p", "preview-unavailable", "Loading preview…"));
@@ -685,7 +718,17 @@ function renderMoveSuggestion(suggestion, index) {
     }
   }
 
-  previewButton.addEventListener("click", loadPreview);
+  previewButton.addEventListener("click", () => {
+    if (previewPanel.hidden) {
+      loadPreview();
+      return;
+    }
+    previewRequest += 1;
+    previewPanel.hidden = true;
+    previewButton.textContent = "Preview file";
+    previewButton.setAttribute("aria-expanded", "false");
+    setAppStatus(`Preview hidden for ${suggestion.fileName}.`);
+  });
   destinationControls.addEventListener("input", () => {
     reviewedDestinationPath = "";
     approveButton.disabled = true;
@@ -706,7 +749,9 @@ function renderMoveSuggestion(suggestion, index) {
       moveSuggestions = moveSuggestions.filter((item) => item.id !== suggestion.id);
       moveNotice = `Skipped ${suggestion.fileName} for now. No files were moved.`;
       renderSuggestion();
-      setAppStatus(`Done — skipped ${suggestion.fileName} for now.`);
+      setAppStatus(
+        `Done — skipped ${suggestion.fileName} for now. ${reviewCountsSummary()}.`
+      );
     } catch (error) {
       skipButton.disabled = false;
       operationError.textContent = `We could not skip this suggestion: ${error.message}`;
@@ -738,9 +783,13 @@ function renderMoveSuggestion(suggestion, index) {
         return;
       }
       moveNotice = `Moved ${result.fileName} to ${result.destinationPath}`;
+      moveSuggestions = moveSuggestions.filter((item) => item.id !== suggestion.id);
+      renderSuggestion();
       await scanFolders({ resetSelection: false });
       showSuggestionPage(true);
-      setAppStatus(`Done — moved ${result.fileName}.`);
+      setAppStatus(
+        `Done — moved ${result.fileName}. ${reviewCountsSummary()}.`
+      );
     } catch (error) {
       approveButton.disabled = false;
       operationError.textContent = `We could not move this file: ${error.message}`;
@@ -764,17 +813,25 @@ function renderAlreadyOrganized() {
 
 function renderSuggestion() {
   const suggestionCount = moveSuggestions.length;
+  renderReviewCounts();
   suggestionNotice.textContent = moveNotice;
   suggestionNotice.hidden = !moveNotice;
-  suggestionProgress.textContent = suggestionCount
-    ? `${suggestionCount} ${suggestionCount === 1 ? "move" : "moves"} to review`
-    : "All caught up";
   suggestionEmpty.hidden = suggestionCount > 0;
   suggestionEmpty.textContent = "No move suggestions right now. Your files remain where they are.";
   suggestionsButton.textContent = "Organize Files";
   skippedFilesSummary.textContent = `Skipped files (${skippedFiles.length})`;
   skippedFilesDisclosure.hidden = skippedFiles.length === 0;
   appendReviewItems(skippedFilesList, skippedFiles, "skipped-reason");
+  skippedFoldersSummary.textContent = `Skipped folders (${skippedFolders.length})`;
+  skippedFoldersDisclosure.hidden = skippedFolders.length === 0;
+  appendReviewItems(skippedFoldersList, skippedFolders.map((folder) => ({
+    fileName: folder.name,
+    path: folder.path,
+    reason: folder.reason
+  })), "skipped-reason");
+  needsPreviewSummary.textContent = `Needs preview (${needsPreview.length})`;
+  needsPreviewDisclosure.hidden = needsPreview.length === 0;
+  appendReviewItems(needsPreviewList, needsPreview, "skipped-reason");
   alreadyOrganizedSummary.textContent = `Already organized (${alreadyOrganized.length} ${alreadyOrganized.length === 1 ? "folder" : "folders"})`;
   alreadyOrganizedDisclosure.hidden = alreadyOrganized.length === 0;
   renderAlreadyOrganized();
@@ -900,7 +957,7 @@ function renderDeletionCandidate(candidate) {
       deletionNotice.textContent = `Kept ${result.fileName}. It remains where it is.`;
       deletionNotice.hidden = false;
       renderDeletionReview();
-      setAppStatus(`Done — ${result.fileName} stays where it is.`);
+      setAppStatus(`Done — ${result.fileName} stays where it is. ${reviewCountsSummary()}.`);
     } catch (error) {
       keepButton.disabled = false;
       deleteButton.disabled = false;
@@ -927,7 +984,7 @@ function renderDeletionCandidate(candidate) {
       deletionNotice.textContent = `Sent ${result.fileName} to the Recycle Bin.`;
       deletionNotice.hidden = false;
       renderDeletionReview();
-      setAppStatus(`Done — ${result.fileName} was sent to the Recycle Bin.`);
+      setAppStatus(`Done — ${result.fileName} was sent to the Recycle Bin. ${reviewCountsSummary()}.`);
     } catch (error) {
       keepButton.disabled = false;
       deleteButton.disabled = false;
@@ -943,10 +1000,8 @@ function renderDeletionCandidate(candidate) {
 
 function renderDeletionReview() {
   const count = deletionCandidates.length;
+  renderReviewCounts();
   deletionReviewButton.textContent = "Delete Files";
-  deletionProgress.textContent = count
-    ? `${count} ${count === 1 ? "candidate" : "candidates"} to review`
-    : "All caught up";
   deletionEmpty.hidden = count > 0;
   deletionEmpty.textContent = deletionReviewedCount
     ? "No more candidates to review. Files you kept remain where they are."
@@ -1015,6 +1070,7 @@ function navigateBack() {
 async function scanFolders({ resetSelection = true } = {}) {
   clearTimeout(searchTimer);
   searchRequest += 1;
+  scanFailed = false;
   setAppStatus("Still processing — scanning your folders…", { processing: true });
   deletionNotice.textContent = "";
   deletionNotice.hidden = true;
@@ -1034,12 +1090,18 @@ async function scanFolders({ resetSelection = true } = {}) {
   try {
     const result = await window.organizer.scanFolders();
     folders = result.folders;
+    scanIssueCount = folders.reduce(
+      (count, folder) => count + folder.errors.filter((error) => error.kind !== "file").length,
+      0
+    );
     purposeFolders = result.purposeFolders;
     moveSuggestions = result.suggestions;
     deletionCandidates = result.deletionCandidates;
     deletionReviewIssues = result.deletionIssues;
     deletionReviewedCount = 0;
     skippedFiles = result.skippedFiles;
+    skippedFolders = result.skippedFolders;
+    needsPreview = result.needsPreview;
     alreadyOrganized = result.alreadyOrganized;
     renderFolders();
     renderPurposeFolders();
@@ -1057,13 +1119,7 @@ async function scanFolders({ resetSelection = true } = {}) {
         showPage(purposeFolders.length ? "purpose" : "general");
       }
     }
-    const issueCount = folders.reduce(
-      (count, folder) => count + folder.errors.filter((error) => error.kind !== "file").length,
-      0
-    );
-    setStatus(issueCount
-      ? `${issueCount} locations need attention`
-      : `${moveSuggestions.length} move suggestions · ${deletionCandidates.length} deletion candidates`);
+    const issueCount = scanIssueCount;
     setAppStatus(
       issueCount
         ? `Scan complete — ${issueCount} locations need attention.`
@@ -1076,6 +1132,7 @@ async function scanFolders({ resetSelection = true } = {}) {
     }
     return true;
   } catch (error) {
+    scanFailed = true;
     setStatus("Scan could not finish");
     showMessage(`We could not scan your folders: ${error.message}`);
     setAppStatus(`We could not scan your folders: ${error.message}`, { error: true });
@@ -1083,7 +1140,10 @@ async function scanFolders({ resetSelection = true } = {}) {
     deletionCandidates = [];
     deletionReviewIssues = [];
     deletionReviewedCount = 0;
+    scanIssueCount = 0;
     skippedFiles = [];
+    skippedFolders = [];
+    needsPreview = [];
     alreadyOrganized = [];
     purposeFolders = [];
     moveNotice = `We could not prepare move suggestions: ${error.message}`;
@@ -1096,6 +1156,10 @@ async function scanFolders({ resetSelection = true } = {}) {
     rescanButton.disabled = false;
   }
 }
+
+window.organizer.onScanProgress(({ scannedCount, rootLabel }) => {
+  setStatus(`${scannedCount.toLocaleString()} files scanned — ${rootLabel}…`);
+});
 
 async function addExistingPurposeFolder() {
   addPurposeFolderButton.disabled = true;

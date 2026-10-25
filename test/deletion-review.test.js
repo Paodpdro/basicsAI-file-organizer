@@ -1,8 +1,10 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
+const { createHash } = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const { createDuplicateHashCache } = require("../src/main/duplicate-hash-cache");
 const {
   buildDeletionCandidates,
   createDeletionReviewQueue,
@@ -54,6 +56,74 @@ test("flags exact-content duplicates but not files that only have similar names"
   assert.deepEqual(result.candidates[0].reasonTags, ["duplicate"]);
   assert.equal(result.candidates[0].duplicateOf.fileName, "report-copy.txt");
   assert.equal(result.issues.length, 0);
+});
+
+test("reuses cached hashes for unchanged same-size candidates", async (t) => {
+  const { root } = await createFixture(t);
+  const sameDate = new Date("2026-10-01T00:00:00.000Z");
+  const first = await createFileRecord(root, "first.txt", "same bytes", sameDate);
+  const second = await createFileRecord(root, "second.txt", "same bytes", sameDate);
+  const cachePath = path.join(path.dirname(root.path), "hashes.json");
+  const digest = createHash("sha256").update("same bytes").digest("hex");
+  const initialCache = await createDuplicateHashCache(cachePath, [first, second]);
+  initialCache.set(first, digest);
+  initialCache.set(second, digest);
+  await initialCache.flush();
+  const cache = await createDuplicateHashCache(cachePath, [first, second]);
+  let cacheWrites = 0;
+  const writeCachedHash = cache.set.bind(cache);
+  cache.set = (...args) => {
+    cacheWrites += 1;
+    return writeCachedHash(...args);
+  };
+
+  const result = await buildDeletionCandidates(
+    [root],
+    [first, second],
+    {
+      now: new Date("2026-10-24T00:00:00.000Z"),
+      hashCache: cache
+    }
+  );
+
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0].reasonTags.includes("duplicate"), true);
+  assert.equal(cacheWrites, 0);
+});
+
+test("rehashes same-size files after their modified date changes", async (t) => {
+  const { root } = await createFixture(t);
+  const sameDate = new Date("2026-10-01T00:00:00.000Z");
+  const first = await createFileRecord(root, "first.txt", "same bytes", sameDate);
+  const second = await createFileRecord(root, "second.txt", "same bytes", sameDate);
+  const cachePath = path.join(path.dirname(root.path), "hashes.json");
+  const originalDigest = createHash("sha256").update("same bytes").digest("hex");
+  const initialCache = await createDuplicateHashCache(cachePath, [first, second]);
+  initialCache.set(first, originalDigest);
+  initialCache.set(second, originalDigest);
+  await initialCache.flush();
+
+  const changedDate = new Date("2026-10-02T00:00:00.000Z");
+  await fs.writeFile(second.path, "diff bytes");
+  await fs.utimes(second.path, changedDate, changedDate);
+  const changedStats = await fs.stat(second.path);
+  const changedSecond = {
+    ...second,
+    sizeBytes: changedStats.size,
+    modifiedAt: changedStats.mtime.toISOString()
+  };
+  const cache = await createDuplicateHashCache(cachePath, [first, changedSecond]);
+  const result = await buildDeletionCandidates(
+    [root],
+    [first, changedSecond],
+    {
+      now: new Date("2026-10-24T00:00:00.000Z"),
+      hashCache: cache
+    }
+  );
+
+  assert.equal(result.candidates.length, 0);
+  await cache.flush();
 });
 
 test("flags only files modified strictly more than one year before the scan date", async (t) => {

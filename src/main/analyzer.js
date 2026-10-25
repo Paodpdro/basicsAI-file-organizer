@@ -6,6 +6,7 @@ const { isInsideRoot } = require("./scanner");
 const { nextAvailableFileName, readExistingNames } = require("./destination-names");
 
 const TEXT_EXTENSIONS = new Set([".txt", ".md", ".csv", ".log"]);
+const NEEDS_PREVIEW_EXTENSIONS = new Set([...TEXT_EXTENSIONS, ".pdf"]);
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".heic"]);
 const AUDIO_EXTENSIONS = new Set([".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm"]);
@@ -140,9 +141,9 @@ async function extractText(roots, file) {
   }
 }
 
-function classifyFile(file, searchableText, roots) {
+function classifyFile(file, roots) {
   const extension = path.extname(file.name).toLowerCase();
-  const haystack = `${file.name}\n${searchableText}`.toLowerCase();
+  const haystack = file.name.toLowerCase();
   const rootById = new Map(roots.map((root) => [root.id, root]));
 
   if (extension === ".ino" || /\barduino\b/.test(haystack)) {
@@ -163,28 +164,28 @@ function classifyFile(file, searchableText, roots) {
     return {
       destinationRootId: "desktop",
       purposeFolderName: "Minecraft",
-      reason: "File names or readable text mentioning Minecraft point to a Minecraft folder on Desktop."
+      reason: "File names mentioning Minecraft point to a Minecraft folder on Desktop."
     };
   }
   if (/\bwebtech\s*2\b/.test(haystack)) {
     return {
       destinationRootId: "documents",
       purposeFolderName: "Webtech 2",
-      reason: "File names or readable text mentioning Webtech 2 point to a matching folder in Documents."
+      reason: "File names mentioning Webtech 2 point to a matching folder in Documents."
     };
   }
   if (/\bresearch\b|\bthesis\b|\bacademic paper\b|\bliterature review\b|\bjournal article\b/.test(haystack)) {
     return {
       destinationRootId: "documents",
       purposeFolderName: "Research",
-      reason: "File names or readable text mentioning research point to a Research folder in Documents."
+      reason: "File names mentioning research point to a Research folder in Documents."
     };
   }
   if (/\bstudy\b|\bcourse notes\b|\blecture notes\b|\bassignment\b|\bstudy materials\b|\bstudent records\b/.test(haystack)) {
     return {
       destinationRootId: "documents",
       purposeFolderName: "Study Materials",
-      reason: "File names or readable text suggest study materials for a Study Materials folder in Documents."
+      reason: "File names suggest study materials for a Study Materials folder in Documents."
     };
   }
 
@@ -203,13 +204,6 @@ function classifyFile(file, searchableText, roots) {
     purposeFolderName: "",
     reason: `These files may fit in ${label}.`
   };
-}
-
-const UNSAFE_READ_CODES = new Set(["EACCES", "EBUSY", "EIO", "ENOENT", "EPERM", "ETXTBSY"]);
-
-function isUnsafeToHandle(error) {
-  return UNSAFE_READ_CODES.has(error.code) ||
-    /outside the approved folders|changed after scanning|cannot be read safely|no longer be read/i.test(error.message);
 }
 
 async function findProjectRoots(files, canonicalRoots) {
@@ -289,6 +283,7 @@ async function buildMoveSuggestions(folders, roots) {
 
   const projectRoots = await findProjectRoots(files, canonicalRoots);
   const analyzedFiles = [];
+  const needsPreview = [];
   for (const file of files) {
     const rootPath = canonicalRoots.get(file.rootId);
     if (!rootPath || !isInsideRoot(rootPath, file.path)) {
@@ -313,29 +308,19 @@ async function buildMoveSuggestions(folders, roots) {
       continue;
     }
 
-    let searchableText = "";
-    try {
-      const extracted = await extractText(roots, file);
-      searchableText = extracted.text;
-    } catch (error) {
-      if (!isUnsafeToHandle(error)) {
-        analyzedFiles.push({
-          file,
-          destination: classifyFile(file, searchableText, roots)
-        });
-        continue;
-      }
-      skippedFiles.push({
-        fileName: file.name,
-        path: file.path,
-        reason: `This file cannot be safely read or handled: ${error.message}`
-      });
-      continue;
-    }
+    const destination = classifyFile(file, roots);
     analyzedFiles.push({
       file,
-      destination: classifyFile(file, searchableText, roots)
+      destination
     });
+    if (!destination && NEEDS_PREVIEW_EXTENSIONS.has(path.extname(file.name).toLowerCase())) {
+      needsPreview.push({
+        fileName: file.name,
+        rootId: file.rootId,
+        path: file.path,
+        reason: "No destination matched the file name and type. Preview it to decide where it belongs."
+      });
+    }
   }
 
   const suggestions = [];
@@ -414,13 +399,12 @@ async function buildMoveSuggestions(folders, roots) {
       fileCount
     }))
     .sort((left, right) => left.path.localeCompare(right.path));
-  return { suggestions: safeSuggestions, skippedFiles, alreadyOrganized };
+  return { suggestions: safeSuggestions, skippedFiles, alreadyOrganized, needsPreview };
 }
 
 module.exports = {
   buildMoveSuggestions,
   createPdfJsOptions,
   extractText,
-  fileTypeLabel,
-  isUnsafeToHandle
+  fileTypeLabel
 };
