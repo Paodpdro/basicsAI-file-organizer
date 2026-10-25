@@ -53,7 +53,7 @@ Build mode: learn
   Learner check: Set each review page to 5, 10, and 50 items, preview a disposable duplicate or old test file, choose Keep first, then test Delete on a separate disposable file and confirm it is recoverable from Recycle Bin. Tell me if the previews, tags, page controls, and confirmation make the decisions understandable.
   Commit: `Add confirmed deletion review`
 
-- [ ] **5. Speed up large folder scans without changing review safeguards**
+- [x] **5. Speed up large folder scans without changing review safeguards**
   Becomes usable: Scanning large personal folders reads metadata without parsing file contents, shows the running file count, skips known cache folders with a visible reason while preserving folder totals, and keeps exact-duplicate review working through cached hashes.
   Why now: The browsing, organization, and deletion journeys already work; this focused performance pass addresses the reported slow scan while protecting the established review and approval behavior.
   PRD ref: `prd.md > The Core Journey` (steps 1 and 7), `Scanning and organization suggestions`, `Deletion review`, and `States and Boundaries`
@@ -70,6 +70,7 @@ Build mode: learn
 
 ## Final Review
 
+- [x] Use the exact “Preview file” label on move cards, allow hiding and reopening previews, and keep move/deletion counts in sync after decisions; Windows retry confirmed the pages look right.
 - [x] Shorten review navigation buttons to “Organize Files” and “Delete Files”; keep counts on the review pages.
 - [x] Show a visible “Still processing” status during scans and file actions.
 - [x] Show compact source-to-destination locations on move cards with expandable full paths.
@@ -105,3 +106,4 @@ Activity mode: Brief evidence-based recap; guided route declined. App map prepar
 - Final-review retry — Paul confirmed the shortened buttons, on-page counts, processing message, compact/expandable locations, and adjusted decoration visibility look good.
 - Shipping verification fix — PDF.js now loads CMaps and standard fonts from its local package assets and suppresses warning-level diagnostics. Confirmed the source Git root is `~/basicsAI`; Windows cannot launch npm from the WSL UNC working directory, so its app run uses the synchronized Windows-side copy.
 - Future AI preference — Paul would like AI-assisted file assessment in a later version. It is deferred beyond this POC until the privacy approach for reading personal file contents is decided.
+- Slice 5 Windows feedback — scan progress, skipped-folder handling, timings, and the review pages were confirmed good. Move-card preview buttons now use the short label and toggle, and move/deletion counts refresh after decisions; Paul confirmed the Windows run copy looks right.
