@@ -66,7 +66,7 @@ Build mode: learn
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — confirmed folder browsing works, compared the displayed files with Explorer, and refined the palette, card shape, header, button, dates, and background icons through hands-on feedback before organization suggestions were added.
-- [ ] Final kick-the-tires exploration and feedback completed — after all slices, try the full scan, organization, browsing, preview/open, and deletion flows in Windows.
+- [x] Final kick-the-tires exploration and feedback completed — Paul tried the full Windows app journey and confirmed it works.
 
 ## Final Review
 
@@ -107,3 +107,4 @@ Activity mode: Brief evidence-based recap; guided route declined. App map prepar
 - Shipping verification fix — PDF.js now loads CMaps and standard fonts from its local package assets and suppresses warning-level diagnostics. Confirmed the source Git root is `~/basicsAI`; Windows cannot launch npm from the WSL UNC working directory, so its app run uses the synchronized Windows-side copy.
 - Future AI preference — Paul would like AI-assisted file assessment in a later version. It is deferred beyond this POC until the privacy approach for reading personal file contents is decided.
 - Slice 5 Windows feedback — scan progress, skipped-folder handling, timings, and the review pages were confirmed good. Move-card preview buttons now use the short label and toggle, and move/deletion counts refresh after decisions; Paul confirmed the Windows run copy looks right.
+- Final kick-the-tires — Paul tried the full scan, organization, browsing, preview/open, and deletion flows in Windows and confirmed they work; no further changes requested.
