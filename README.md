@@ -29,3 +29,7 @@ npm test
 ```
 
 The test suite uses temporary fixtures and does not modify personal files.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
